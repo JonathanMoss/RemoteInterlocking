@@ -1,8 +1,12 @@
 package com.jgm.remoteinterlocking;
 
 import com.jgm.remoteinterlocking.database.MySqlConnect;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -82,7 +86,21 @@ public class RemoteInterlocking {
             System.exit(0);
         }
         
-        // 4) Get the Interlocking Credentials from the Database.
+        try {
+            // 4) Check IP address, then update if necessary.
+            System.out.println("Here");
+            if (!RemoteInterlocking.riHostAddress.equals(InetAddress.getLocalHost().getHostAddress())) {
+                MySqlConnect.getDbCon().insert(String.format ("UPDATE `Remote_Interlocking` SET `ip_address` = '%s' WHERE `index_key` = '%s';",
+                        InetAddress.getLocalHost().getHostAddress(), RemoteInterlocking.riIndex));
+                System.out.println(String.format ("UPDATE `Remote_Interlocking` SET `ip_address` = '%s' WHERE `index_key` = '%s';",
+                        InetAddress.getLocalHost().getHostAddress(), RemoteInterlocking.riIndex));
+            } else {
+                System.out.println(InetAddress.getLocalHost().getHostAddress() + ", " + RemoteInterlocking.riIndex);
+            }
+            // 5) Get the Interlocking Credentials from the Database.
+        } catch (UnknownHostException | SQLException ex) {
+            ex.printStackTrace();
+        }
         
     }
     /**
