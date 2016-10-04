@@ -10,6 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.RemoteInterlocking;
 
 
 /**
@@ -78,10 +80,10 @@ public final class MySqlConnect {
                 Class.forName("com.mysql.jdbc.Driver").newInstance();
                 this.conn = (Connection)DriverManager.getConnection(conString, dbUserName, dbPassword);
                 System.out.println(String.format ("%s%s%s", 
-                    Colour.GREEN.getColour(), LineSideModule.getOK(), Colour.RESET.getColour()));
+                    Colour.GREEN.getColour(), RemoteInterlocking.getOK(), Colour.RESET.getColour()));
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | SQLException sqle) {
                 System.out.println(String.format ("%s%s [Connection Error]%s", 
-                        Colour.RED.getColour(), LineSideModule.getFailed(), Colour.RESET.getColour()));
+                        Colour.RED.getColour(), RemoteInterlocking.getFailed(), Colour.RESET.getColour()));
                 System.exit(0);
             }
         }
@@ -94,7 +96,7 @@ public final class MySqlConnect {
         System.out.print("Attempting to get Database Credentials from dbAccess.txt...");
         try {
             // Setup the input stream.
-            InputStream dbSetup  = LineSideModule.class.getResourceAsStream("dbAccess.txt");
+            InputStream dbSetup  = RemoteInterlocking.class.getResourceAsStream("dbAccess.txt");
             BufferedReader reader = new BufferedReader (new InputStreamReader(dbSetup));
             // Declare method variables.
             String line;
@@ -116,17 +118,17 @@ public final class MySqlConnect {
                 dbUserName = DB_CONNECTION_CREDENTIALS.get(3);
                 dbPassword = DB_CONNECTION_CREDENTIALS.get(4);
                 System.out.println(String.format ("%s%s%s", 
-                    Colour.GREEN.getColour(), LineSideModule.getOK(), Colour.RESET.getColour()));
+                    Colour.GREEN.getColour(), RemoteInterlocking.getOK(), Colour.RESET.getColour()));
             } else {
                 // Alert the user - close the programme (no point continuing).
                 System.out.println(String.format ("%s%s%s - %sdbAccess.txt contains invalid database credentials.%s%s",
-                    Colour.RED.getColour(), LineSideModule.getFailed(), Colour.RESET.getColour(), Colour.BLUE.getColour(), Colour.RESET.getColour(), LineSideModule.NEW_LINE));
+                    Colour.RED.getColour(), RemoteInterlocking.getFailed(), Colour.RESET.getColour(), Colour.BLUE.getColour(), Colour.RESET.getColour(), RemoteInterlocking.NEW_LINE));
                 System.exit(0);
             }
         } catch (NullPointerException | IOException e) {
             // Alert the user - close the programme (no point continuing).
             System.out.println(String.format ("%s%s%s - %sCannot read from dbAccess.txt%s%s", 
-                Colour.RED.getColour(), LineSideModule.getFailed(), Colour.RESET.getColour(), Colour.BLUE.getColour(), Colour.RESET.getColour(), LineSideModule.NEW_LINE));
+                Colour.RED.getColour(), RemoteInterlocking.getFailed(), Colour.RESET.getColour(), Colour.BLUE.getColour(), Colour.RESET.getColour(), RemoteInterlocking.NEW_LINE));
             System.exit(0);
         }
     }
