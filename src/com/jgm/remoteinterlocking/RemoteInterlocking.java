@@ -1,5 +1,6 @@
 package com.jgm.remoteinterlocking;
 
+import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.LinesideModuleListen;
@@ -8,6 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -36,7 +38,9 @@ public class RemoteInterlocking {
     
     // LineSide Module Details
     private static final HashMap<String, Integer> LS_MOD = new HashMap<>();
+    private static ArrayList<Boolean> lsModSetup = new ArrayList<>();
     private static boolean lsModuleSetupComplete = false;
+    public static LinesideModuleListen lsModListen;
     
     // Database variables
     private static ResultSet rs;
@@ -48,6 +52,9 @@ public class RemoteInterlocking {
     // Data Logger variables.
     private static DataLoggerClient dataLogger;
     private static Boolean connectedToDL = false;
+    
+    // Points Variables.
+    private static final ArrayList<Points> POINTS = new ArrayList<>();
     
     public static void main(String[] args) {
         
@@ -209,6 +216,7 @@ public class RemoteInterlocking {
             while (rs.next()) {
                 LS_MOD.put(rs.getString("identity"), rs.getInt("index_key"));
                 lsModOutput += rs.getString("identity") + "(" + rs.getInt("index_key") + ")" + ((rs.isLast()) ? "" : ", ");
+                lsModSetup.add(false);
             }
             sendStatusMessage(String.format ("%s%s%s",
                 Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
@@ -242,10 +250,10 @@ public class RemoteInterlocking {
         // 9) Listenening for incoming connections from LineSide Modules.
         sendStatusMessage("Listening for incoming connections from LineSide Modules...", 
             false, true);
-        Thread t = new LinesideModuleListen(riPort);
-        t.start();
+        lsModListen = new LinesideModuleListen(riPort);
+        lsModListen.start();
         
-        while (!lsModuleSetupComplete) {
+       while (!lsModuleSetupComplete) {
             // Loop until setup complete
         }
         
@@ -259,8 +267,30 @@ public class RemoteInterlocking {
         sendStatusMessage(String.format ("%s%s%s",
             Colour.RED.getColour(), "ERROR: Cannot connect to the Interlocking, cannot continue.", Colour.RESET.getColour()),
             true, true);
-        System.exit(0);
+        //System.exit(0);
     }
+    
+    public static synchronized void addPointsToArray (String identity, String lsm) {
+        POINTS.add(new Points(identity, lsm));
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            false, true);
+    }
+    
+    public static String getRemoteInterlockingName() {
+        return riIdentity;
+    }
+    
+    public static Boolean validateIncomingMessage(String identity) {
+        
+        if (RemoteInterlocking.LS_MOD.containsKey(identity)) {
+            lsModSetup.set(LS_MOD.get(identity), true);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
     /**
      * This method returns a string representing 'OK' for display on the command line.
      * This method determines an appropriate indication based on the capabilities of the console.

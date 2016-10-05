@@ -1,7 +1,7 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
+import com.jgm.remoteinterlocking.RemoteInterlocking;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Level;
@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 public class LinesideModuleClientConnection extends Thread {
 
     private final Socket socket;
+    public ClientOutput output;
     
     public LinesideModuleClientConnection (Socket socket) {
         this.socket = socket;
@@ -23,16 +24,15 @@ public class LinesideModuleClientConnection extends Thread {
     private void setUpStreams() {
         try {
             new Thread(new ClientInput(this.socket.getInputStream())).start();
-        } catch (IOException ex) {
-            Logger.getLogger(LinesideModuleClientConnection.class.getName()).log(Level.SEVERE, null, ex);
-        }
+            new Thread(output = new ClientOutput(this.socket.getOutputStream())).start();
+            sendStatusMessage(String.format ("Validating connection request [%s]...",
+                this.socket.getRemoteSocketAddress().toString().substring(1)), false, true);
+        } catch (IOException ex) {}
     }
+
     @Override
     public void run() {
         setUpStreams();
-        while (true) {
-            
-        }
     }
     
 }

@@ -17,10 +17,11 @@ public class LinesideModuleListen extends Thread {
 
     private ServerSocket listeningSocket;
     private final int port;
+    public LinesideModuleClientConnection lsModCon;
+    private static int connectionRequests = 0;
     
     public LinesideModuleListen (int port) {
         this.port = port;
-
     }
     
     @Override
@@ -35,9 +36,12 @@ public class LinesideModuleListen extends Thread {
                 true, true);
             
             do {
-                
-                new LinesideModuleClientConnection(this.listeningSocket.accept()).start();
-                
+                this.lsModCon = new LinesideModuleClientConnection(this.listeningSocket.accept());
+                connectionRequests ++;
+                sendStatusMessage(String.format("Connection request received [%s]", connectionRequests ), true, true);
+                this.lsModCon.setName(String.format ("ConnectionThread [%s]", connectionRequests));
+                this.lsModCon.start();
+                 
             } while (true);
             
         } catch (BindException b) {
