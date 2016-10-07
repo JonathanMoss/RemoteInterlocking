@@ -3,7 +3,7 @@ package com.jgm.remoteinterlocking;
 import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
-import com.jgm.remoteinterlocking.linesidemoduleconnection.LinesideModuleListen;
+import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MESSAGE_TYPE;
 import static com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler.incomingMessage;
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class RemoteInterlocking {
     private static final HashMap<String, Integer> LS_MOD = new HashMap<>();
     private static ArrayList<Boolean> lsModSetup = new ArrayList<>();
     private static boolean lsModuleSetupComplete = false;
-    public static LinesideModuleListen lsModListen;
+    public static ListenForRequests lsModListen;
     
     // Database variables
     private static ResultSet rs;
@@ -256,7 +256,7 @@ public class RemoteInterlocking {
         // 9) Listenening for incoming connections from LineSide Modules.
         sendStatusMessage("Listening for incoming connections from LineSide Modules...", 
             false, true);
-        lsModListen = new LinesideModuleListen(riPort);
+        lsModListen = new ListenForRequests(riPort);
         lsModListen.start();
         try {
             Thread.sleep(3000);

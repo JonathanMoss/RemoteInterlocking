@@ -5,7 +5,7 @@ import com.jgm.remoteinterlocking.RemoteInterlocking;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getOK;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
-import static com.jgm.remoteinterlocking.linesidemoduleconnection.LinesideModuleListen.connectionValidated;
+import static com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests.connectionValidated;
 import java.util.HashMap;
 
 /**
@@ -102,7 +102,7 @@ public abstract class MessageHandler {
             RemoteInterlocking.getRemoteInterlockingName(), type.toString(), message);
         int hashCode = messageStart.hashCode();
         
-        LinesideModuleListen.getLsmConnection(lsModuleIdentity).output.sendMessageToLSM(String.format("%s|%s|%s",
+        ListenForRequests.getLsmConnection(lsModuleIdentity).output.sendMessageToLSM(String.format("%s|%s|%s",
             messageStart, Integer.toString(hashCode), MESSAGE_END));
         
         setLastMessageSentHash(hashCode);
@@ -129,6 +129,7 @@ public abstract class MessageHandler {
     
     public static synchronized void incomingMessage (String message, String index) {
         
+        System.out.println("String index: " + index);
         String sender = "UNKNOWN";
         MESSAGE_TYPE type;
         String messageText = "";
@@ -190,6 +191,7 @@ public abstract class MessageHandler {
                             true, true);
                         sendMessage(Integer.toString(hashCode), MESSAGE_TYPE.ACK, sender);
                         setHandShakeDone(sender);
+                        ListenForRequests.getLsmConnection(sender).input.setLineSideModule(sender);
                     }
                     break;
                 case NULL:
@@ -200,7 +202,6 @@ public abstract class MessageHandler {
             }
             
         } catch (Exception e) {
-            
             
             sendStatusMessage(String.format ("%sWARNING: Error in message received from '%s'%s - %s[%s]%s",
                 Colour.RED.getColour(), sender, Colour.RESET.getColour(), Colour.BLUE.getColour(), e.getMessage(), Colour.RESET.getColour()), 
