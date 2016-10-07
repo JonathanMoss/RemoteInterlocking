@@ -7,11 +7,11 @@ import static com.jgm.remoteinterlocking.RemoteInterlocking.getOK;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.lsModListen;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
-import static com.jgm.remoteinterlocking.RemoteInterlocking.validateIncomingMessage;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
 
 
 /**
@@ -47,7 +47,7 @@ public class ClientInput extends DataInputStream implements Runnable {
                 } 
                 
                 // Validate the LineSideModule Identity.
-                if (!validateIncomingMessage(incomingMessage[0])) {
+                if (!validateModuleIdentity(incomingMessage[0])) {
                     this.connected = false;
                     throw new IOException();
                 } 

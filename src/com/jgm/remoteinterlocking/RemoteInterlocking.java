@@ -270,6 +270,13 @@ public class RemoteInterlocking {
         //System.exit(0);
     }
     
+    /**
+     * This method creates a Points object and adds that object to the POINTS array.
+     * This method is called during initial setup, when the points objects are being received from the LSM.
+     * 
+     * @param identity A <code>String</code> containing the identity of the points.
+     * @param lsm A <code>String</code> containing the parent Lineside Module.
+     */
     public static synchronized void addPointsToArray (String identity, String lsm) {
         POINTS.add(new Points(identity, lsm));
         sendStatusMessage(String.format ("%s%s%s",
@@ -277,11 +284,23 @@ public class RemoteInterlocking {
             false, true);
     }
     
+    /**
+     * This method returns the identity of the Remote Interlocking.
+     * 
+     * @return A <code>String</code> that contains the remote interlocking identity.
+     */
     public static String getRemoteInterlockingName() {
         return riIdentity;
     }
     
-    public static Boolean validateIncomingMessage(String identity) {
+    /**
+     * This method validates the identity passed against the list of associated LineSideModules.
+     * This ensures that only those Lineside Modules that are registered to this remote interlocking are able to communicate.
+     * 
+     * @param identity A <code>String</code> containing the identity of the sending LSM.
+     * @return Boolean <code>true</code> is returned if the LSM identity has been validated, otherwise <code>false</code>.
+     */
+    public static Boolean validateModuleIdentity(String identity) {
         
         if (RemoteInterlocking.LS_MOD.containsKey(identity)) {
             lsModSetup.set(LS_MOD.get(identity), true);
@@ -319,10 +338,11 @@ public class RemoteInterlocking {
         }
     }
     /**
-     * This method outputs to the console and Data Logger as required.
-     * @param msg 
-     * @param newLine 
-     * @param dLogger 
+     * This method sends an output to the console and to the Data Logger as required.
+     * 
+     * @param msg A <code>String</code> containing the message.
+     * @param newLine A <code>Boolean</code> - <i>true</i> adds a new line to the end of the message, otherwise <i>false</i>.
+     * @param dLogger A <code>Boolean</code> - <i>true</i> sends the output to the Data Logger, otherwise <i>false</i>.
      */
     public static synchronized void sendStatusMessage(String msg, Boolean newLine, Boolean dLogger) {
         if (dLogger && connectedToDL) {
