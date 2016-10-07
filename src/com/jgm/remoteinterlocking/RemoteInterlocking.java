@@ -4,6 +4,8 @@ import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.LinesideModuleListen;
+import com.jgm.remoteinterlocking.linesidemoduleconnection.MESSAGE_TYPE;
+import static com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler.incomingMessage;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -11,6 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -57,6 +61,8 @@ public class RemoteInterlocking {
     private static final ArrayList<Points> POINTS = new ArrayList<>();
     
     public static void main(String[] args) {
+        
+        
         
         String bannerMessage =  "************************************************************" + NEW_LINE +
                                 "* Remote Interlocking v1.0 - October 2016 (c)JGM-NET.co.uk *" + NEW_LINE +
@@ -252,6 +258,12 @@ public class RemoteInterlocking {
             false, true);
         lsModListen = new LinesideModuleListen(riPort);
         lsModListen.start();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(RemoteInterlocking.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         
        while (!lsModuleSetupComplete) {
             // Loop until setup complete
@@ -303,7 +315,6 @@ public class RemoteInterlocking {
     public static Boolean validateModuleIdentity(String identity) {
         
         if (RemoteInterlocking.LS_MOD.containsKey(identity)) {
-            lsModSetup.set(LS_MOD.get(identity), true);
             return true;
         } else {
             return false;

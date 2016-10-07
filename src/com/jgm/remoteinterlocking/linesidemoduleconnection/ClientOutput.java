@@ -1,5 +1,7 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
+import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.RemoteInterlocking;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,6 +27,9 @@ public class ClientOutput extends DataOutputStream implements Runnable {
         try {
             this.writeUTF(message);
             this.flush();
+            RemoteInterlocking.sendStatusMessage(String.format ("Message T/X: %s[%s]%s", 
+                Colour.BLUE.getColour(), message, Colour.RESET.getColour()),
+                true, true);
         } catch (IOException ex) {
             this.connected = false;
         }
