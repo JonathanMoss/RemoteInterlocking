@@ -4,6 +4,7 @@ import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
+import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -255,12 +256,27 @@ public class RemoteInterlocking {
         sendStatusMessage("Listening for incoming connections from LineSide Modules...", 
             false, true);
         lsModListen = new ListenForRequests(riPort);
+        lsModListen.setName("Listening Thread");
         lsModListen.start();
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ex) {
             Logger.getLogger(RemoteInterlocking.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        Thread processMessages = new Thread (() -> {
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                    MessageHandler.processMessageStack();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(RemoteInterlocking.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        processMessages.setName("Processing Messages Thread");
+        processMessages.start();
+        
         
         
        while (!lsModuleSetupComplete) {

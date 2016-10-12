@@ -2,13 +2,10 @@ package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
 import com.jgm.remoteinterlocking.Colour;
 import com.jgm.remoteinterlocking.RemoteInterlocking;
-import static com.jgm.remoteinterlocking.RemoteInterlocking.getOK;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
-import static com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests.connectionValidated;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * This abstract class provides the functionality of a message handler.
@@ -19,61 +16,85 @@ import java.util.HashMap;
  */
 public abstract class MessageHandler {
     
-    private static volatile ArrayList <Message> msgStack = new ArrayList<>();
-    private static volatile HashMap <String, Boolean> handShakeNeeded = new HashMap<>();
-    private static final String MESSAGE_END = "MESSAGE_END"; 
+    private static volatile ArrayList <Message> msgStack = new ArrayList<>(); // A Stack of Message Objects that are processed by the MessageProcess Thread.
+    private static final String MESSAGE_END = "MESSAGE_END"; // Constant definition for the Message Ending.
     
-    private synchronized static boolean isHandShakeNeeded(String lsm) {
-        if (handShakeNeeded.containsKey(lsm)) {
-            if (handShakeNeeded.get(lsm)) {
-                return true;
-            } else {
-                return false;
+    public synchronized static void processMessageStack() {
+        
+        while (msgStack.size() > 0) {
+            switch (msgStack.get(0).getMsgDirection()) {
+                case OUTGOING:
+                    sendMessage(msgStack.get(0));
+                    RemoteInterlocking.sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
+                        msgStack.get(0).getMsgReceiver(), Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
+                    true, true);
+                    break;
+                case INCOMING:
+                // Display a message to the console and DataLogger.
+                    RemoteInterlocking.sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
+                        Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
+                    true, true);
+                    switch (msgStack.get(0).getMsgType()) {
+                        case HAND_SHAKE:
+                            outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
+                            break;
+                        case ACK:
+                            break;
+                        case SETUP:
+                            break;
+                        case STATE_CHANGE:
+                            break;
+                        case NULL:
+                            break;
+                        case RESEND: // Re-send the last message.
+                            break;
+                }
+                    break;
             }
-        } else {
-            return true;
-        }      
+            
+            msgStack.remove(0);
+        } 
     }
     
-    private synchronized static void setHandShakeDone (String lsm) {
+    /**
+     * This method correctly formats a message, and sends it to the Remote Client Specified
+     * 
+     * @param message A <code>String</code> containing the message body (content)
+     * @param type A <code>MessageType</code> constant representing the meaning of / reason for the message.
+     * @param remoteClientIdentity A <code>String</code> containing the Remote Client Identity.
+     */
+    private static synchronized void sendMessage (Message msg) {
         
-        handShakeNeeded.put(lsm, false);
-   
+        /*  
+        *   Messages shall be constructed in the following format:
+        *   SENDER|MessageType|MESSAGE|HASH|END_MESSAGE, e.g.
+        *   '12345|HAND_SHAKE|NULL|-45362554762|END_MESSAGE'
+        */
+        
+        // Format the message...
+        String formattedMessage = String.format ("%s|%s|%s|%s|%s",
+            msg.getMsgSender(), msg.getMsgType().toString(), msg.getMsgBody(), msg.getMsgHash(), MESSAGE_END);
+
+        // Send the message to the correct Remote Client.
+        ListenForRequests.getClientOutput(msg.getMsgReceiver()).sendMsgToRemoteClient(formattedMessage);
+        
     }
-    
-    /*  This method is used to format, and send the message.
-        Messages shall be formated thus:
-        SENDER|MessageType|MESSAGE|HASH|END_MESSAGE, e.g.
-    */
-    public static synchronized void sendMessage (String message, MessageType type, String lsModuleIdentity) {
+    /**
+     * This method is used to add an OutGoing Message to the Message Stack ready for processing.
+     * 
+     * @param message A <code>String</code> containing the message body (content)
+     * @param type A <code>MessageType</code> constant representing the meaning of / reason for the message.
+     * @param remoteClientIdentity A <code>String</code> containing the Remote Client Identity.
+     */
+    public static synchronized void outGoingMessage (String message, MessageType type, String remoteClientIdentity) {
         
-        String messageStart = String.format ("%s|%s|%s",
-            RemoteInterlocking.getRemoteInterlockingName(), type.toString(), message);
-        int hashCode = messageStart.hashCode();
-        
-        ListenForRequests.getClientConnection(lsModuleIdentity).output.sendMessageToLSM(String.format("%s|%s|%s",
-            messageStart, Integer.toString(hashCode), MESSAGE_END));
-              
-        switch (type) {
-            case ACK:
-                break;
-            case SETUP:
-                break;
-            case STATE_CHANGE:
-                break;
-            case HAND_SHAKE:
-                break;
-            case NULL:
-                break;
-            case RESEND:
-                break;
-            }
+        int hashCode = String.format ("%s|%s|%s",remoteClientIdentity, type.toString(), message).hashCode();
+        msgStack.add(new Message(RemoteInterlocking.getRemoteInterlockingName(), remoteClientIdentity, MessageDirection.OUTGOING, type, message, hashCode, null, ListenForRequests.getClientOutput(remoteClientIdentity)));
         
     }
        
-    public static synchronized void incomingMessage (String message, String index) {
+    public static synchronized void incomingMessage (String message, ClientInput input) {
         
-        System.out.println("String index: " + index);
         String sender = "UNKNOWN";
         MessageType type;
         String messageText = "";
@@ -120,39 +141,20 @@ public abstract class MessageHandler {
                 hashCode = Integer.parseInt(incomingMessage[3]);
             }
             
+            ListenForRequests.connectionValidated(sender, input.getClientOutput());
+            
             // Add the message to the message stack now it has been validated as much as possible.
-            msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode));
-                
-            switch (type) {
-                case ACK:
-                    break;
-                case SETUP:
-                    break;
-                case STATE_CHANGE:
-                    break;
-                case HAND_SHAKE:
-                    if (isHandShakeNeeded(sender)) {
-                        connectionValidated(sender, index);
-                        sendStatusMessage(String.format ("%s%s%s",
-                            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                            true, true);
-                        sendMessage(Integer.toString(hashCode), MessageType.ACK, sender);
-                        setHandShakeDone(sender);
-                        ListenForRequests.getClientConnection(sender).input.setClientIdentity(sender);
-                    }
-                    break;
-                case NULL:
-                    break;
-                case RESEND: // Re-send the last message.
-                    
-                    break;
-            }
+            msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode, input, null));
             
         } catch (Exception e) {
             
             sendStatusMessage(String.format ("%sWARNING: Error in message received from '%s'%s - %s[%s]%s",
                 Colour.RED.getColour(), sender, Colour.RESET.getColour(), Colour.BLUE.getColour(), e.getMessage(), Colour.RESET.getColour()), 
                 true, true);
+            
+            // Destroy the connection on the streams.
+            input.getClientOutput().setConnected(false);
+            input.setConnected(false);
             
         }
         

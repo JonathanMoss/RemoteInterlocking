@@ -38,14 +38,11 @@ public class ClientOutput extends DataOutputStream implements Runnable {
      * This method sends a message to the Client.
      * @param message 
      */
-    protected synchronized void sendMessageToLSM (String message) {
+    protected synchronized void sendMsgToRemoteClient (String message) {
         try {
             this.writeUTF(message); // Send the message.
             this.flush(); // Flush any remaiing bytes from the Output Buffer.
             // Send a message confirming that the message has been sent (An exception has not been thrown).
-            RemoteInterlocking.sendStatusMessage(String.format ("Message T/X: %s[%s]%s", 
-                Colour.BLUE.getColour(), message, Colour.RESET.getColour()),
-                true, true);
         } catch (IOException ex) { // There has been a problem, the message could not be sent.
             this.connected = false; // Set the connected flag to destroy this object/thread.
         }

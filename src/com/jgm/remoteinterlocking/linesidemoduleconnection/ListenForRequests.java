@@ -7,7 +7,9 @@ import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This Class provides the functionality to Listen for connection requests from remote clients.
@@ -19,8 +21,8 @@ public class ListenForRequests extends Thread {
 
     private ServerSocket listeningSocket; // The server socket that will listen for incoming connection requests.
     private final int port; // The port number to listen for incoming connection requests.
-    public static HashMap <String, ClientConnection> clientConnection = new HashMap<>(); // This map holds a reference to the Client Connection Objects.
-    private static int connectionRequests = 1;
+    public static HashMap <String, ClientOutput> clientOutput = new HashMap<>(); // This map holds a reference to the Client Output Objects.
+    private static int connectionRequests = 1; // A static integer that holds a tally of Connection Requests from remote clients.
     
     /**
      * This is the constructor method for the ListenForRequests.
@@ -36,6 +38,8 @@ public class ListenForRequests extends Thread {
     public void run() {
         try {
             this.listeningSocket = new ServerSocket(this.port, 100); // Listen for incoming connections.
+            
+            // Send a message to the console and Data Logger.
             sendStatusMessage(String.format ("%s%s%s",
                 Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
                 false, true);
@@ -44,13 +48,26 @@ public class ListenForRequests extends Thread {
                 true, true);
             
             do { 
-                // Create and add a new ClientConnection to the HashMap with a default index using the connectionRequest integer when a connection request has been received.
-                // We will change the default index later, only once the identity of the LineSideModule has been verified.
-                clientConnection.put(Integer.toString(connectionRequests), new ClientConnection(this.listeningSocket.accept(), Integer.toString(connectionRequests)));
-                clientConnection.get(Integer.toString(connectionRequests)).setName(String.format ("ConnectionThread [%s]", connectionRequests));
-                clientConnection.get(Integer.toString(connectionRequests)).start();
-                sendStatusMessage(String.format("Connection request received [%s]", connectionRequests ), true, true);
+                Socket sock = this.listeningSocket.accept(); // Wait for, and accept any incoming connection requests.
+                // Set up the clientOutput and clientInput Streams and Threads.
+                ClientOutput output;
+                Thread threadOutput = new Thread (output = new ClientOutput(sock.getOutputStream()));
+                threadOutput.setName("ClientOutput Thread");
+                threadOutput.start();
+                
+                Thread threadInput = new Thread (new ClientInput (sock.getInputStream(), output));
+                threadInput.setName("ClientInput Thread");
+                threadInput.start();
+                
+                // Display a message to the console and Data Logger.
+                sendStatusMessage(String.format("Connection request received [%s]", 
+                    connectionRequests), 
+                    true, true);
+                sendStatusMessage(String.format ("Validating connection request [%s]...",
+                    sock.getRemoteSocketAddress().toString().substring(1)), 
+                    false, true);
                 connectionRequests ++;
+                
             } while (true);
             
         } catch (BindException b) {
@@ -70,32 +87,63 @@ public class ListenForRequests extends Thread {
                 true, true);
             System.exit(0);
         }
+    
+    
+  }
+    /**
+     * This method is called when a connection to a Remote Client has been validated.
+     * 
+     * @param remoteClientIdentity A <code>String</code> that contains the Remote Client Identity.
+     * @param output A <code>ClientOutput</code> object that is associated with the Remote Client Identity.
+     */
+    protected static synchronized void connectionValidated (String remoteClientIdentity, ClientOutput output) {
+       
+        if (clientOutput.containsKey(remoteClientIdentity)) {
+            if (!clientOutput.get(remoteClientIdentity).equals(output)) {
+                clientOutput.remove(remoteClientIdentity);
+                clientOutput.put(remoteClientIdentity, output);
+            }
+        } else if (clientOutput.containsValue(output)) {
+            clientOutput.remove(getKeyFromValue(clientOutput, output));
+            clientOutput.put(remoteClientIdentity, output);
+        } else {
+            clientOutput.put(remoteClientIdentity, output);
+            
+        }
+        
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            true, true);
+
     }
     
-    /**
-     * This method is called when a connection to a Lineside Module has been validated.
-     * This method replaces the key/value in clientConnection hash map with an entry with a confirmed Lineside Module Identity.
-     * @param lsmIdentity A <code>String</code> that contains the Lineside Module Identity
-     * @param index A <code>String</code> that contains the (former) key, prior to validation.
-     */
-    protected static synchronized void connectionValidated (String lsmIdentity, String index) {
-        
-        clientConnection.put(lsmIdentity, clientConnection.get(index)); // Create the new key/value pair using the value from the former key/value pair.
-        clientConnection.remove(index); // Remove the former key/value pair as it is no longer needed.
-        
-    }
+    // This method returns a key associated with a value.
+    private static Object getKeyFromValue(Map hm, Object value) {
+    
+        for (Object o : hm.keySet()) {
+            if (hm.get(o).equals(value)) {
+                return o;
+            }
+        }
+    
+        return null;
+  }
     
     /**
-     * This method is used to get the ClientConnection object assigned to a particular client.
-     * @param clientIdentity A <code>String</code> representing the Lineside Module Identity
-     * @return A <code>ClientConnection</code> object that is associated with the Lineside Module passed in the first parameter.
+     * This method is used to get the ClientOutput object assigned to a particular client.
+     * @param clientIdentity A <code>String</code> representing the Remote Client Identity
+     * @return A <code>ClientOutput</code> object that is associated with the Remote Client passed in the first parameter.
      */
-    protected static synchronized ClientConnection getClientConnection(String clientIdentity) {
-        if (clientConnection.containsKey(clientIdentity)) { // Check if the HashMap contains the key...
-            return clientConnection.get(clientIdentity); // If it does, return the value (ClientConnection)
+    protected static synchronized ClientOutput getClientOutput(String clientIdentity) {
+        if (clientOutput.containsKey(clientIdentity)) { // Check if the HashMap contains the key...
+            return clientOutput.get(clientIdentity); // If it does, return the value (ClientConnection)
         } else {
             return null; // Otherwise, return null.
         }
+    }
+    
+    protected static synchronized String getClientIdentity (ClientOutput output) {
+        return (String) getKeyFromValue (clientOutput, output);
     }
     
     

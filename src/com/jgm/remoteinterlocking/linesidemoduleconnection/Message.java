@@ -15,6 +15,8 @@ public class Message {
     private final MessageType msgType; // The type of the message, i.e. STATE_CHANGE, HAND_SHAKE etc...
     private final String msgBody; // The message body.
     private final int msgHash; // The hash of the relevant portion of the message.
+    private final ClientInput input; // The ClientInput object assigned to the message (where relevant, otherwise null).
+    private final ClientOutput output; // The ClientOutput object assigned to the message (where relevant, otherwise null).
     
     /**
     * This is the Constructor method for the Message Class object.
@@ -25,8 +27,10 @@ public class Message {
     * @param type A <code>MessageType</code> constant that informs the receiving module regarding the purpose of the message.
     * @param message A <code>String</code> that contains that actual message body text.
     * @param hash An <code>int</code> that contains the hashCode of the relevant portions of the message.
+    * @param input A <code>ClientInput</code> object where the message was received (if relevant, otherwise null);
+    * @param output A <code>ClientOutput</code> object where the message should be sent to (if relevant, otherwise null);
     */
-    protected Message (String sender, String receiver, MessageDirection direction, MessageType type, String message, int hash) {
+    protected Message (String sender, String receiver, MessageDirection direction, MessageType type, String message, int hash, ClientInput input, ClientOutput output) {
         
         // Assign the values received in the constructor to the instance variables.
         this.msgBody = message;
@@ -35,7 +39,24 @@ public class Message {
         this.msgReceiver = receiver;
         this.msgSender = sender;
         this.msgType = type;
+        this.input = input;
+        this.output = output;
         
+    }
+    /**
+     * This method returns the ClientInput object associated with this message.
+     * @return <code>ClientInput</Code> Object
+     */
+    protected ClientInput getInput() {
+        return input;
+    }
+    
+    /**
+     * This method returns the ClientOutput associated with this message.
+     * @return <code>ClientOutput</Code> Object
+     */
+    protected ClientOutput getOutput() {
+        return output;
     }
     
     /**

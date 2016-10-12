@@ -1,7 +1,6 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
 import com.jgm.remoteinterlocking.Colour;
-import com.jgm.remoteinterlocking.RemoteInterlocking;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -16,31 +15,26 @@ import java.io.InputStream;
 public class ClientInput extends DataInputStream implements Runnable {
     
     private boolean connected = true;
-    private String clientIdentity;
     private final ClientOutput clientOutput;
 
     /** 
      * This is the Constructor Method for the ClientInput Class.
      * @param in An <code>InputStream</code> object.
-     * @param clientIdentity A <code>String</code> representing the identity of the Client. 
      * @param clientOutput An <code>ClientOutput</code> object that has been instantiated alongside this ClientInput object. 
      */
-    protected ClientInput(InputStream in, String clientIdentity, ClientOutput clientOutput) {
+    protected ClientInput(InputStream in, ClientOutput clientOutput) {
         
         super(in);
-        this.clientIdentity = clientIdentity;
         this.clientOutput = clientOutput;
         
     }
     
-    /**
-     * This method provides the ability to change the Client Identity associated with this object.
-     * 
-     * We need to do this once communication to a valid client have been established.
-     * @param clientIdentity A <code>String</code> that contains the Client Identity
-     */
-    protected synchronized void setClientIdentity(String clientIdentity) {
-        this.clientIdentity = clientIdentity;
+    protected synchronized ClientOutput getClientOutput() {
+        return this.clientOutput;
+    }
+    
+    protected synchronized void setConnected (Boolean connected) {
+        this.connected = false;
     }
     
     @Override
@@ -50,16 +44,11 @@ public class ClientInput extends DataInputStream implements Runnable {
                 // Read the input received on the InputDataStream.
                 String message = this.readUTF(); 
                 // Send the message to the MessageHandler Class.
-                MessageHandler.incomingMessage(message, this.clientIdentity);
-                
-                // Display a message to the console and DataLogger.
-                RemoteInterlocking.sendStatusMessage(String.format ("Message R/X: %s[%s]%s", 
-                    Colour.BLUE.getColour(), message, Colour.RESET.getColour()),
-                    true, true);
+                MessageHandler.incomingMessage(message, this);
             } catch (IOException ex) { // There has been a problem
                 // Display a message to the console and DataLogger.
-                sendStatusMessage(String.format ("%s%s%s",
-                    Colour.RED.getColour(), "WARNING: The Lineside Module has disconnected.", Colour.RESET.getColour()),
+                sendStatusMessage(String.format ("%sWARNING: The Remote Client [%s] has disconnected%s",
+                    Colour.RED.getColour(), ListenForRequests.getClientIdentity(this.clientOutput), Colour.RESET.getColour()),
                     true, true);
                 // Destroy this object by setting its connected flag to 'false'.
                 this.connected = false;
