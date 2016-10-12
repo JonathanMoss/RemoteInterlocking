@@ -1,11 +1,14 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
 import com.jgm.remoteinterlocking.Colour;
-import com.jgm.remoteinterlocking.RemoteInterlocking;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.setupLineSideModule;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.updatePoints;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
+import com.jgm.remoteinterlocking.assets.PointsPosition;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * This abstract class provides the functionality of a message handler.
@@ -25,13 +28,13 @@ public abstract class MessageHandler {
             switch (msgStack.get(0).getMsgDirection()) {
                 case OUTGOING:
                     sendMessage(msgStack.get(0));
-                    RemoteInterlocking.sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
+                    sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
                         msgStack.get(0).getMsgReceiver(), Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
                     true, true);
                     break;
                 case INCOMING:
                 // Display a message to the console and DataLogger.
-                    RemoteInterlocking.sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
+                    sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
                         Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
                     true, true);
                     switch (msgStack.get(0).getMsgType()) {
@@ -41,7 +44,14 @@ public abstract class MessageHandler {
                         case ACK:
                             break;
                         case SETUP:
-                            break;
+                            // Setup is used following the initial upload from the DB of the lineside assets, the RI requests an update of the status of the assets from the Lineside Module.
+                            String msgBody[] = msgStack.get(0).getMsgBody().split("\\.");
+                                if (Arrays.toString(msgBody).contains("POINTS")) {
+                                    updatePoints(msgBody[1], PointsPosition.valueOf(msgBody[2]), Boolean.valueOf(msgBody[3]));
+                                    sendStatusMessage(String.format ("Points Status Update: %s[Points: %s, Position: %s, Detection: %s]%s",
+                                        Colour.BLUE.getColour(), msgBody[1], msgBody[2], msgBody[3], Colour.RESET.getColour()),
+                                        true, true);
+                                }
                         case STATE_CHANGE:
                             break;
                         case NULL:
@@ -89,7 +99,7 @@ public abstract class MessageHandler {
     public static synchronized void outGoingMessage (String message, MessageType type, String remoteClientIdentity) {
         
         int hashCode = String.format ("%s|%s|%s",remoteClientIdentity, type.toString(), message).hashCode();
-        msgStack.add(new Message(RemoteInterlocking.getRemoteInterlockingName(), remoteClientIdentity, MessageDirection.OUTGOING, type, message, hashCode, null, ListenForRequests.getClientOutput(remoteClientIdentity)));
+        msgStack.add(new Message(getRemoteInterlockingName(), remoteClientIdentity, MessageDirection.OUTGOING, type, message, hashCode, null, ListenForRequests.getClientOutput(remoteClientIdentity)));
         
     }
        
@@ -141,7 +151,9 @@ public abstract class MessageHandler {
                 hashCode = Integer.parseInt(incomingMessage[3]);
             }
             
-            ListenForRequests.connectionValidated(sender, input.getClientOutput());
+            if (setupLineSideModule(sender)) {
+                ListenForRequests.connectionValidated(sender, input.getClientOutput());
+            }
             
             // Add the message to the message stack now it has been validated as much as possible.
             msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode, input, null));

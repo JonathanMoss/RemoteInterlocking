@@ -66,6 +66,9 @@ public class ListenForRequests extends Thread {
                 sendStatusMessage(String.format ("Validating connection request [%s]...",
                     sock.getRemoteSocketAddress().toString().substring(1)), 
                     false, true);
+                sendStatusMessage(String.format ("%s%s%s",
+                    Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                    true, true);
                 connectionRequests ++;
                 
             } while (true);
@@ -110,10 +113,6 @@ public class ListenForRequests extends Thread {
             clientOutput.put(remoteClientIdentity, output);
             
         }
-        
-        sendStatusMessage(String.format ("%s%s%s",
-            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-            true, true);
 
     }
     
