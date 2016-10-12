@@ -7,39 +7,53 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- *
+ * This class provides the functionality to send messages to remote Clients.
+ * 
  * @author Jonathan Moss
  * @version v1.0 October 2016
  */
 public class ClientOutput extends DataOutputStream implements Runnable {
     
-    private Boolean connected = true;
+    private volatile Boolean connected = true; // This is a flag to indicate if there is a valid connection to the remote client.
     
-    public ClientOutput(OutputStream out) {
+    /**
+     * This is the Constructor Method for the ClientOutput Class.
+     * @param out An <code>OutputStream</code> object from a connected socket. 
+     */
+    protected ClientOutput(OutputStream out) {
         super(out);
     }
 
-    public synchronized void setConnected (Boolean connected) {
+    /**
+     * This method is called to set the Connected Flag.
+     * 
+     * This method should be called from the counterpart ClientInput object.
+     * @param connected A <code>Boolean</code> indicating '<i>true</i>' if there is a valid connection, otherwise '<i>false</i>'.
+     */
+    protected synchronized void setConnected (Boolean connected) {
         this.connected = connected;
     }
     
-    public synchronized void sendMessageToLSM (String message) {
+    /**
+     * This method sends a message to the Client.
+     * @param message 
+     */
+    protected synchronized void sendMessageToLSM (String message) {
         try {
-            this.writeUTF(message);
-            this.flush();
+            this.writeUTF(message); // Send the message.
+            this.flush(); // Flush any remaiing bytes from the Output Buffer.
+            // Send a message confirming that the message has been sent (An exception has not been thrown).
             RemoteInterlocking.sendStatusMessage(String.format ("Message T/X: %s[%s]%s", 
                 Colour.BLUE.getColour(), message, Colour.RESET.getColour()),
                 true, true);
-        } catch (IOException ex) {
-            this.connected = false;
+        } catch (IOException ex) { // There has been a problem, the message could not be sent.
+            this.connected = false; // Set the connected flag to destroy this object/thread.
         }
     }
     
     @Override
     public void run() {
-        while (this.connected) {
-            
-        }
+        while (this.connected) {} // Loop whilst connected.
     }
 
 }

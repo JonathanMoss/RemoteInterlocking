@@ -3,9 +3,11 @@ package com.jgm.remoteinterlocking.linesidemoduleconnection;
 import com.jgm.remoteinterlocking.Colour;
 import com.jgm.remoteinterlocking.RemoteInterlocking;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getOK;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
 import static com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests.connectionValidated;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -17,62 +19,9 @@ import java.util.HashMap;
  */
 public abstract class MessageHandler {
     
+    private static volatile ArrayList <Message> msgStack = new ArrayList<>();
     private static volatile HashMap <String, Boolean> handShakeNeeded = new HashMap<>();
-    private static volatile String lastMessageSent = ""; // String containing the last message sent.
-    private static volatile String lastMessageSentReceiver = "";
-    private static volatile int lastMessageSentHash = 0;
-    private static volatile MESSAGE_TYPE lastMessageSentType = MESSAGE_TYPE.NULL;
-    private static volatile String lastMessageRecevied = ""; // String containing the last message received.
-    private static volatile int lastMessageReceivedHash = 0;
     private static final String MESSAGE_END = "MESSAGE_END"; 
-    
-    private static void setLastMessageSentMessageType(MESSAGE_TYPE type) {
-        lastMessageSentType = type;
-    }
-    
-    public static MESSAGE_TYPE getLastMessageSentType() {
-        return lastMessageSentType;
-    }
-    
-    public synchronized static String getLastMessageSentReceiver(){
-        return lastMessageSentReceiver;
-    }
-    
-    public synchronized static String getLastMessageSent (){
-        return lastMessageSent;
-    }
-    
-    public synchronized static int getLastMessageSentHash () {
-        return lastMessageSentHash;
-    }
-    
-    public synchronized static String getLastMessageReceived (){
-        return lastMessageRecevied;
-    }
-    
-    public synchronized static int getLastMessageReceivedHash () {
-        return lastMessageReceivedHash;
-    }
-    
-    public synchronized static void setLastMessageSentReceiver(String lsmIdentity) {
-        lastMessageSentReceiver = lsmIdentity;
-    }
-    
-    public synchronized static void setLastMessageSent (String msg){
-        lastMessageSent = msg;
-    }
-    
-    public synchronized static void setLastMessageSentHash (int hash) {
-        lastMessageSentHash = hash;
-    }
-    
-    public synchronized static void setlastMessageReceived (String msg){
-        lastMessageRecevied = msg;
-    }
-    
-    public synchronized static void setLastMessageReceivedHash (int hash) {
-        lastMessageReceivedHash = hash;
-    }
     
     private synchronized static boolean isHandShakeNeeded(String lsm) {
         if (handShakeNeeded.containsKey(lsm)) {
@@ -94,22 +43,17 @@ public abstract class MessageHandler {
     
     /*  This method is used to format, and send the message.
         Messages shall be formated thus:
-        SENDER|MESSAGE_TYPE|MESSAGE|HASH|END_MESSAGE, e.g.
+        SENDER|MessageType|MESSAGE|HASH|END_MESSAGE, e.g.
     */
-    public static synchronized void sendMessage (String message, MESSAGE_TYPE type, String lsModuleIdentity) {
+    public static synchronized void sendMessage (String message, MessageType type, String lsModuleIdentity) {
         
         String messageStart = String.format ("%s|%s|%s",
             RemoteInterlocking.getRemoteInterlockingName(), type.toString(), message);
         int hashCode = messageStart.hashCode();
         
-        ListenForRequests.getLsmConnection(lsModuleIdentity).output.sendMessageToLSM(String.format("%s|%s|%s",
+        ListenForRequests.getClientConnection(lsModuleIdentity).output.sendMessageToLSM(String.format("%s|%s|%s",
             messageStart, Integer.toString(hashCode), MESSAGE_END));
-        
-        setLastMessageSentHash(hashCode);
-        setLastMessageSentReceiver(lsModuleIdentity);
-        setLastMessageSentMessageType(type);
-        setLastMessageSent(message);
-        
+              
         switch (type) {
             case ACK:
                 break;
@@ -126,12 +70,12 @@ public abstract class MessageHandler {
             }
         
     }
-    
+       
     public static synchronized void incomingMessage (String message, String index) {
         
         System.out.println("String index: " + index);
         String sender = "UNKNOWN";
-        MESSAGE_TYPE type;
+        MessageType type;
         String messageText = "";
         int hashCode = 0;
         
@@ -161,7 +105,7 @@ public abstract class MessageHandler {
                 throw new Exception("Malformed message received");
             }
             
-            type = MESSAGE_TYPE.valueOf(incomingMessage[1]);
+            type = MessageType.valueOf(incomingMessage[1]);
             
             if (incomingMessage[2] == null || incomingMessage[2].isEmpty()) {
                 throw new Exception("Invalid message body");
@@ -176,6 +120,9 @@ public abstract class MessageHandler {
                 hashCode = Integer.parseInt(incomingMessage[3]);
             }
             
+            // Add the message to the message stack now it has been validated as much as possible.
+            msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode));
+                
             switch (type) {
                 case ACK:
                     break;
@@ -189,15 +136,15 @@ public abstract class MessageHandler {
                         sendStatusMessage(String.format ("%s%s%s",
                             Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
                             true, true);
-                        sendMessage(Integer.toString(hashCode), MESSAGE_TYPE.ACK, sender);
+                        sendMessage(Integer.toString(hashCode), MessageType.ACK, sender);
                         setHandShakeDone(sender);
-                        ListenForRequests.getLsmConnection(sender).input.setLineSideModule(sender);
+                        ListenForRequests.getClientConnection(sender).input.setClientIdentity(sender);
                     }
                     break;
                 case NULL:
                     break;
                 case RESEND: // Re-send the last message.
-                    sendMessage (getLastMessageSent(), getLastMessageSentType(), getLastMessageSentReceiver());
+                    
                     break;
             }
             

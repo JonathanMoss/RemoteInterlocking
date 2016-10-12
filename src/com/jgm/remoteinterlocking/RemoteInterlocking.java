@@ -4,8 +4,6 @@ import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
-import com.jgm.remoteinterlocking.linesidemoduleconnection.MESSAGE_TYPE;
-import static com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler.incomingMessage;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
