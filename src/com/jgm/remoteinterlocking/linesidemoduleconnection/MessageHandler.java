@@ -140,7 +140,7 @@ public abstract class MessageHandler {
      */
     public static synchronized void outGoingMessage (String message, MessageType type, String remoteClientIdentity) {
         
-        int hashCode = String.format ("%s|%s|%s",remoteClientIdentity, type.toString(), message).hashCode();
+        int hashCode = String.format ("%s|%s|%s", getRemoteInterlockingName(), type.toString(), message).hashCode();
         msgStack.add(new Message(getRemoteInterlockingName(), remoteClientIdentity, MessageDirection.OUTGOING, type, message, hashCode, null, ListenForRequests.getClientOutput(remoteClientIdentity)));
         
     }
@@ -187,7 +187,6 @@ public abstract class MessageHandler {
             }
             
             if (String.format ("%s|%s|%s",sender, type.toString(), messageText).hashCode() != Integer.parseInt(incomingMessage[3])) {
-                System.out.println(String.format ("%s|%s|%s",sender, type.toString(), messageText).hashCode() + ", " + Integer.parseInt(incomingMessage[3]));
                 throw new Exception("Corrupted message, cannot validate hash");
             } else {
                 hashCode = Integer.parseInt(incomingMessage[3]);
