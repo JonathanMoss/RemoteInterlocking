@@ -1,7 +1,12 @@
 package com.jgm.remoteinterlocking;
 
+import com.jgm.remoteinterlocking.assets.Aspects;
+import com.jgm.remoteinterlocking.assets.ControlledSignal;
+import com.jgm.remoteinterlocking.assets.NonControlledSignal;
 import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.assets.PointsPosition;
+import com.jgm.remoteinterlocking.assets.TrainDetectionSection;
+import com.jgm.remoteinterlocking.assets.TrainDetectionStatus;
 import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
@@ -41,9 +46,19 @@ public class RemoteInterlocking {
     private static String dlHostAddress;
     private static boolean dataLoggerDetails = false;
     
-    // LineSide Module Details
+    /**
+     * This map contains the LineSide Modules assigned to this remote interlocking.
+     * The <code>String</code> is the key, and contains the LineSideModule Identity.
+     * The <code>Integer</code> is the value, and contains the index_key from within the database.
+     */
     private static final HashMap<String, Integer> LS_MOD = new HashMap<>();
-    private static HashMap<String, Boolean> LinesideModuleSetupComplete = new HashMap<>();
+    
+    /**
+     * This map contains values that record if the LinesideModule is setup correctly.
+     * The <code>String</code> is the key, and contains the LineSideModule Identity.
+     * The <code>Boolean</code> is the value, 'true' indicates that full setup is needed, otherwise 'false'.
+     */
+    private static HashMap<String, Boolean> linesideModuleSetupComplete = new HashMap<>();
     public static ListenForRequests lsModListen;
     
     // Database variables
@@ -57,12 +72,13 @@ public class RemoteInterlocking {
     private static DataLoggerClient dataLogger;
     private static Boolean connectedToDL = false;
     
-    // Points Variables.
+    // Asset Variables.
     private static final ArrayList<Points> POINTS = new ArrayList<>();
+    private static final ArrayList<ControlledSignal> CONTROLLED_SIGNALS = new ArrayList<>();
+    private static final ArrayList<NonControlledSignal> NON_CONTROLLED_SIGNALS = new ArrayList<>();
+    private static final ArrayList<TrainDetectionSection> TRAIN_DETECTION_SECTIONS = new ArrayList<>(); 
     
     public static void main(String[] args) {
-        
-        
         
         String bannerMessage =  "************************************************************" + NEW_LINE +
                                 "* Remote Interlocking v1.0 - October 2016 (c)JGM-NET.co.uk *" + NEW_LINE +
@@ -103,11 +119,23 @@ public class RemoteInterlocking {
         }
         
         // 3) Connect to the database and check if the identity passed on the command line is valid.
+        sendStatusMessage("Connecting to the remote DB to validate command line arguments...", 
+            false, false);
         try {
             rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM Remote_Interlocking WHERE identity = '%s';", riIdentity));
+            sendStatusMessage(String.format ("%s%s%s",
+                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                true, false);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            sendStatusMessage(String.format ("%s%s%s",
+                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                true, false);
+            sendStatusMessage(String.format ("%s%s%s",
+                Colour.RED.getColour(), "ERROR: Cannot connect to the remote DB, cannot continue.", Colour.RESET.getColour()),
+                true, false);
+            System.exit(0);
         }
+        
         sendStatusMessage("Checking Remote DB for Remote Interlocking Credentials...", 
             false, false);
         try {
@@ -222,10 +250,9 @@ public class RemoteInterlocking {
             while (rs.next()) {
                 LS_MOD.put(rs.getString("identity"), rs.getInt("index_key"));
                 lsModOutput += rs.getString("identity") + "(" + rs.getInt("index_key") + ")" + ((rs.isLast()) ? "" : ", ");
-                LinesideModuleSetupComplete.put(rs.getString("identity"), false);
+                linesideModuleSetupComplete.put(rs.getString("identity"), false);
                 
             }
-            
             
             sendStatusMessage(String.format ("%s%s%s",
                 Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
@@ -268,6 +295,7 @@ public class RemoteInterlocking {
             Logger.getLogger(RemoteInterlocking.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+        // Initiate and run the processMessageStack method as a Thread
         Thread processMessages = new Thread (() -> {
             while (true) {
                 try {
@@ -281,7 +309,7 @@ public class RemoteInterlocking {
         processMessages.setName("Processing Messages Thread");
         processMessages.start();
 
-       while (LinesideModuleSetupComplete.containsValue(false)) {
+       while (linesideModuleSetupComplete.containsValue(false)) {
             // Loop until setup complete
         }
         
@@ -298,182 +326,70 @@ public class RemoteInterlocking {
         //System.exit(0);
     }
     
-    public static synchronized Boolean setupLineSideModule(String lineSideModuleIdentity) {
-
-        if (LinesideModuleSetupComplete.containsKey(lineSideModuleIdentity)) {
-            if (LinesideModuleSetupComplete.get(lineSideModuleIdentity).equals(true)) {
+    /**
+     * This method performs a setup on all the Remote Client associated assets.
+     * 
+     * @param lineSideModuleIdentity A <code>String</code> containing the Lineside Module Identity.
+     * @return <code>Boolean</code> <i>'false'</i> is returned if there is no need to perform a setup, otherwise <i>'true'</i>.
+     */
+    public static synchronized Boolean setupAssets(String lineSideModuleIdentity) {
+        
+        // Check to see if the LSM passed to the method needs setting up - false indicates 'NO'.
+        if (linesideModuleSetupComplete.containsKey(lineSideModuleIdentity)) {
+            if (linesideModuleSetupComplete.get(lineSideModuleIdentity).equals(true)) {
                 return false;
             }
         }
         
+        // This block checks if the lineSideModuleIdentity is within the LS_MOD HashMap, and returns the value, which represents the index_key from the DataBase.
         int index = 0;
-        
         if (LS_MOD.containsKey(lineSideModuleIdentity)) {
             index = LS_MOD.get(lineSideModuleIdentity);
         } else {
+            // Display a message to the console and Data Logger.
             sendStatusMessage(String.format ("%s%s%s",
                 Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
                 true, true);
             return false;
         }
         
+        // Display a message to the console and Data Logger.
         sendStatusMessage(String.format("Connection established with Line Side Module [%s] - Accessing remote DB to download assets.", 
             lineSideModuleIdentity),
             true, true);
         
-        // 1) Setup Points.
-        sendStatusMessage(String.format("Connected to remote DB - looking for Points assigned to Line Side Module [%s]...",
-            lineSideModuleIdentity),
-            false, true);
+        // Run the setup Methods.
+        try {
+            setUpPoints(index, lineSideModuleIdentity);
+            setUpControlledSignals(index, lineSideModuleIdentity);
+            setUpNonControlledSignals(index, lineSideModuleIdentity);
+            setUpTrainDetection(index, lineSideModuleIdentity);
+        } catch (SQLException e) {
+            sendStatusMessage(String.format ("%s%s%s",
+                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                true, true);
+            return false;
+        }
 
-        try {
-            rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Points` WHERE `parentLinesideModule` = '%s';", index));
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                true, true);
-            System.out.println();
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.BLUE.getColour(), "Points", Colour.RESET.getColour()),
-                true, true);
-            sendStatusMessage(String.format ("%s------%s",
-                Colour.BLUE.getColour(), Colour.RESET.getColour()), 
-                true, true);
-            
-            while (rs.next()) {
-                addPointsToArray (rs.getString("identity"), lineSideModuleIdentity);
-                sendStatusMessage(String.format ("%s%s%s", 
-                    Colour.BLUE.getColour(), rs.getString("identity"), Colour.RESET.getColour()),
-                    true, true);
-            }
-            
-            MessageHandler.outGoingMessage("UPDATE.POINTS.ALL", MessageType.SETUP, lineSideModuleIdentity);
-            System.out.println();
-            
-        } catch (SQLException ex) {
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
-                true, true);
-            return false;
-        }
-        
-        // 2) Setup Controlled Signals...
-        sendStatusMessage(String.format("Connected to remote DB - looking for Controlled Signals assigned to Line Side Module [%s]...",
-            lineSideModuleIdentity),
-            false, true);
-        
-        try {
-            rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                true, true);
-            System.out.println();
-            sendStatusMessage(String.format ("%s%-20s%-9s%s",
-                Colour.BLUE.getColour(), "Controlled Signals", "Type", Colour.RESET.getColour()),
-                true, true);
-            sendStatusMessage(String.format ("%s----------------------------------------%s",
-                Colour.BLUE.getColour(), Colour.RESET.getColour()), 
-                true, true);
-            while (rs.next()) {
-                addControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
-                sendStatusMessage(String.format ("%s%-20s%-9s%s", 
-                    Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
-                    true, true);
-            }
-            
-            MessageHandler.outGoingMessage("UPDATE.CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
-            System.out.println();
-            
-        } catch (SQLException ex) {
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
-                true, true);
-            return false;
-        }
-        
-        // 3) Setup Non-Controlled Signals...
-        sendStatusMessage(String.format("Connected to remote DB - looking for Non-Controlled Signals assigned to Line Side Module [%s]...",
-            lineSideModuleIdentity),
-            false, true);
-        
-        try {
-            rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Non_Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                true, true);
-            System.out.println();
-            sendStatusMessage(String.format ("%s%-23s%-9s%s",
-                Colour.BLUE.getColour(), "Non-Controlled Signals", "Type", Colour.RESET.getColour()),
-                true, true);
-            sendStatusMessage(String.format ("%s-------------------------------------%s",
-                Colour.BLUE.getColour(), Colour.RESET.getColour()), 
-                true, true);
-            while (rs.next()) {
-                addNonControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
-                sendStatusMessage(String.format ("%s%-23s%s%s", 
-                    Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
-                    true, true);
-            }
-            
-            MessageHandler.outGoingMessage("UPDATE.NON_CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
-            System.out.println();
-            
-        } catch (SQLException ex) {
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
-                true, true);
-            return false;
-        }
-        
-        // 4) Setup Train Detection...
-        sendStatusMessage(String.format("Connected to remote DB - looking for Train Detection Sections assigned to Line Side Module [%s]...",
-            lineSideModuleIdentity),
-            false, true);
-        
-        try {
-            rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Train_Detection` WHERE `parentLinesideModule` = '%s';", index));
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                true, true);
-            System.out.println();
-            sendStatusMessage(String.format ("%s%-9s%s%s",
-                Colour.BLUE.getColour(), "Section", "Type", Colour.RESET.getColour()),
-                true, true);
-            sendStatusMessage(String.format ("%s----------------------%s",
-                Colour.BLUE.getColour(), Colour.RESET.getColour()), 
-                true, true);
-            while (rs.next()) {
-                addTrainDetectionSectionsToArray (rs.getString("identity"), lineSideModuleIdentity);
-                sendStatusMessage(String.format ("%s%-9s%-9s%s", 
-                    Colour.BLUE.getColour(), rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
-                    true, true);
-            }
-            
-            MessageHandler.outGoingMessage("UPDATE.TRAIN_DETECTION.ALL", MessageType.SETUP, lineSideModuleIdentity);
-            System.out.println();
-            
-        } catch (SQLException ex) {
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
-                true, true);
-            return false;
-        }
-       
-        setSetupComplete(lineSideModuleIdentity);
+        setSetupComplete(lineSideModuleIdentity); // Confirm the setup is complete.
         return true;
     }
     
+    /**
+     * This method is used to set that a particular LinesideModule has been setup correctly.
+     * @param lineSideModule <code>String</code> contains the Lineside Module Identity
+     */
     public static synchronized void setSetupComplete (String lineSideModule) {
     
-        if (LinesideModuleSetupComplete.containsKey(lineSideModule)) {
-            LinesideModuleSetupComplete.remove(lineSideModule);
-            LinesideModuleSetupComplete.put(lineSideModule, true);
+        if (linesideModuleSetupComplete.containsKey(lineSideModule)) {
+            linesideModuleSetupComplete.remove(lineSideModule);
+            linesideModuleSetupComplete.put(lineSideModule, true);
         } 
     }    
     
-    
     /**
      * This method creates a Points object and adds that object to the POINTS array.
-     * This method is called during initial setup, when the points objects are being received from the LSM.
+     * This method is called during initial setup, when the points objects are being polled from the remote DB.
      * 
      * @param identity A <code>String</code> containing the identity of the points.
      * @param lsm A <code>String</code> containing the parent Lineside Module.
@@ -482,6 +398,12 @@ public class RemoteInterlocking {
         POINTS.add(new Points(identity, lsm));
     }
     
+    /**
+     * This method is used to update the status of a particular points object.
+     * @param pointsIdentity <code>String</code> containing the Identity of the points object.
+     * @param position <code>PointsPosition</code> containing the position of the points.
+     * @param detected <code>Boolean</code> 'true' indicates that the points are detected, otherwise 'false'.
+     */
     public static synchronized void updatePoints (String pointsIdentity, PointsPosition position, Boolean detected) {
         for (int i = 0; i < POINTS.size(); i++) {
             if (POINTS.get(i).getPointsIdentity().equals(pointsIdentity)) {
@@ -492,16 +414,69 @@ public class RemoteInterlocking {
         }
     }
     
-    public static synchronized void addControlledSignalsToArray (String identity, String lsm) {
+    /**
+    * This method creates a ControlledSignal object and adds that object to the CONTROLLED_SIGNALS array.
+    * This method is called during initial setup, when the Controlled Signal objects are being polled from the remote DB.
+    * 
+    * @param signalIdentity A <code>String</code> containing the identity of the Controlled Signal.
+    * @param lsm A <code>String</code> containing the parent Lineside Module.
+    */
+    public static synchronized void addControlledSignalsToArray (String signalIdentity, String lsm) {
         // TODO
     }
     
-    public static synchronized void addNonControlledSignalsToArray (String identity, String lsm) {
+    /**
+     * This method is used to update the status of a particular Controlled Signal
+     * @param signalIdentity <code>String</code> containing the Identity of Controlled Signal.
+     * @param aspect <code>Aspects</code> containing the current aspect of the Controlled Signal
+     */
+    public static synchronized void updateControlledSignalAspect (String signalIdentity, Aspects aspect) {
+       // TODO
+    }
+    
+    /**
+    * This method creates a NonControlledSignal object and adds that object to the NON_CONTROLLED_SIGNALS array.
+    * This method is called during initial setup, when the Non-Controlled Signal objects are being polled from the remote DB.
+    * 
+    * @param signalIdentity A <code>String</code> containing the identity of the Non-Controlled Signal.
+    * @param lsm A <code>String</code> containing the parent Lineside Module.
+    */
+    public static synchronized void addNonControlledSignalsToArray (String signalIdentity, String lsm) {
         // TODO
     }
     
+    /**
+     * This method is used to update the status of a particular Non-Controlled Signal
+     * @param signalIdentity <code>String</code> containing the Identity of Non-Controlled Signal.
+     * @param aspect <code>Aspects</code> containing the current aspect of the Non-Controlled Signal.
+     */
+    public static synchronized void updateNonControlledSignalAspect (String signalIdentity, Aspects aspect ) {
+       // TODO
+    }
+    
+    /**
+    * This method creates a TrainDetectionSection object and adds that object to the TRAIN_DETECTION_SECTIONS array.
+    * This method is called during initial setup, when the Non-Controlled Signal objects are being polled from the remote DB.
+    * 
+    * @param identity A <code>String</code> containing the identity of the TrainDetectionSection.
+    * @param lsm A <code>String</code> containing the parent Lineside Module.
+    */
     public static synchronized void addTrainDetectionSectionsToArray (String identity, String lsm) {
-        // TODO
+        TRAIN_DETECTION_SECTIONS.add(new TrainDetectionSection(identity, lsm));
+    }
+    
+    /**
+     * This method is used to update the status of a particular points object.
+     * @param trainDetectionSectionIdentity <code>String</code> containing the Identity of the Train Detection Section.
+     * @param status <code>TrainDetectionStatus</code> detailing the status of the Train Detection Section.
+     */
+    public static synchronized void updateTrainDetectionSection (String trainDetectionSectionIdentity, TrainDetectionStatus status) {
+        for (int i = 0; i < TRAIN_DETECTION_SECTIONS.size(); i++) {
+            if (TRAIN_DETECTION_SECTIONS.get(i).getSectionIdentity().equals(trainDetectionSectionIdentity)) {
+                TRAIN_DETECTION_SECTIONS.get(i).setStatus(status);
+                break;
+            }
+        }
     }
     
     /**
@@ -571,5 +546,144 @@ public class RemoteInterlocking {
         } else {
             System.out.printf("%s%s", msg, (newLine) ? NEW_LINE : "");
         }
+    }
+    
+    /**
+     * This method sets up the Points objects.
+     * @param index <code>Integer</code> representing the index_key of the LinesideModule object within the remote DB.
+     */
+    private static synchronized void setUpPoints(int index, String lineSideModuleIdentity) throws SQLException {
+    
+        sendStatusMessage(String.format("Connected to remote DB - looking for Points assigned to Line Side Module [%s]...",
+            lineSideModuleIdentity),
+            false, true);
+        
+        // Define and run the query.
+        rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Points` WHERE `parentLinesideModule` = '%s';", index));
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            true, true);
+        System.out.println();
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.BLUE.getColour(), "Points", Colour.RESET.getColour()),
+            true, true);
+        sendStatusMessage(String.format ("%s------%s",
+            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            true, true);
+
+        // Iterate through the resultSet and add the Points Objects to the PointsArray - displaying the details to the console and Data Logger.
+        while (rs.next()) {
+            addPointsToArray (rs.getString("identity"), lineSideModuleIdentity);
+            sendStatusMessage(String.format ("%s%s%s", 
+                Colour.BLUE.getColour(), rs.getString("identity"), Colour.RESET.getColour()),
+                true, true);
+        }
+        
+        // Send a request the the corresponding LineSideModule requesting an update to all the Points.
+        MessageHandler.outGoingMessage("UPDATE.POINTS.ALL", MessageType.SETUP, lineSideModuleIdentity);
+        System.out.println();
+    }
+    
+    /**
+     * This method sets up the Controlled Signals objects.
+     * @param index <code>Integer</code> representing the index_key of the LinesideModule object within the remote DB.
+     */
+    private static synchronized void setUpControlledSignals(int index, String lineSideModuleIdentity) throws SQLException {
+    
+        sendStatusMessage(String.format("Connected to remote DB - looking for Controlled Signals assigned to Line Side Module [%s]...",
+            lineSideModuleIdentity),
+            false, true);
+        
+        // Define and run the query.
+        rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            true, true);
+        System.out.println();
+        sendStatusMessage(String.format ("%s%-20s%-9s%s",
+            Colour.BLUE.getColour(), "Controlled Signals", "Type", Colour.RESET.getColour()),
+            true, true);
+        sendStatusMessage(String.format ("%s----------------------------------------%s",
+            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            true, true);
+        
+        // Iterate through the resultSet and add the Controlled Signal Objects to the ControlledSignal Array - displaying the details to the console and Data Logger.
+        while (rs.next()) {
+            addControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
+            sendStatusMessage(String.format ("%s%-20s%-9s%s", 
+                Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                true, true);
+        }
+        
+        // Send a request the the corresponding LineSideModule requesting an update to all the Controlled Signals.
+        MessageHandler.outGoingMessage("UPDATE.CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
+        System.out.println();
+            
+    }
+    
+    private static synchronized void setUpNonControlledSignals(int index, String lineSideModuleIdentity) throws SQLException {
+        
+        sendStatusMessage(String.format("Connected to remote DB - looking for Non-Controlled Signals assigned to Line Side Module [%s]...",
+            lineSideModuleIdentity),
+            false, true);
+        
+        // Define and run the query.
+        rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Non_Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            true, true);
+        System.out.println();
+        sendStatusMessage(String.format ("%s%-23s%-9s%s",
+            Colour.BLUE.getColour(), "Non-Controlled Signals", "Type", Colour.RESET.getColour()),
+            true, true);
+        sendStatusMessage(String.format ("%s-------------------------------------%s",
+            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            true, true);
+        
+        // Iterate through the resultSet and add the Non-Controlled Signal Objects to the NonControlledSignal Array - displaying the details to the console and Data Logger.
+        while (rs.next()) {
+            addNonControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
+            sendStatusMessage(String.format ("%s%-23s%s%s", 
+                Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                true, true);
+        }
+
+        // Send a request the the corresponding LineSideModule requesting an update to all the Non-Controlled Signals.
+        MessageHandler.outGoingMessage("UPDATE.NON_CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
+        System.out.println();
+       
+    }
+    
+    private static synchronized void setUpTrainDetection(int index, String lineSideModuleIdentity) throws SQLException {
+    
+        sendStatusMessage(String.format("Connected to remote DB - looking for Train Detection Sections assigned to Line Side Module [%s]...",
+            lineSideModuleIdentity),
+            false, true);
+        
+        // Define and run the query.
+        rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Train_Detection` WHERE `parentLinesideModule` = '%s';", index));
+        sendStatusMessage(String.format ("%s%s%s",
+            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            true, true);
+        System.out.println();
+        sendStatusMessage(String.format ("%s%-9s%s%s",
+            Colour.BLUE.getColour(), "Section", "Type", Colour.RESET.getColour()),
+            true, true);
+        sendStatusMessage(String.format ("%s----------------------%s",
+            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            true, true);
+        
+        // Iterate through the resultSet and add the Train Detection Section Objects to the TrainDetection Array - displaying the details to the console and Data Logger.
+        while (rs.next()) {
+            addTrainDetectionSectionsToArray (rs.getString("identity"), lineSideModuleIdentity);
+            sendStatusMessage(String.format ("%s%-9s%-9s%s", 
+                Colour.BLUE.getColour(), rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                true, true);
+        }
+        
+        // Send a request the the corresponding LineSideModule requesting an update to all the Non-Controlled Signals.
+        MessageHandler.outGoingMessage("UPDATE.TRAIN_DETECTION.ALL", MessageType.SETUP, lineSideModuleIdentity);
+        System.out.println();
+            
     }
 }

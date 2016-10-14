@@ -3,12 +3,13 @@ package com.jgm.remoteinterlocking.linesidemoduleconnection;
 import com.jgm.remoteinterlocking.Colour;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
-import static com.jgm.remoteinterlocking.RemoteInterlocking.setupLineSideModule;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.setupAssets;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.updatePoints;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
 import com.jgm.remoteinterlocking.assets.PointsPosition;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 
 /**
  * This abstract class provides the functionality of a message handler.
@@ -151,28 +152,26 @@ public abstract class MessageHandler {
                 hashCode = Integer.parseInt(incomingMessage[3]);
             }
             
-            if (setupLineSideModule(sender)) {
+            if (setupAssets(sender)) { // Check if we need to setup the Remote Client assets.
                 ListenForRequests.connectionValidated(sender, input.getClientOutput());
             }
             
             // Add the message to the message stack now it has been validated as much as possible.
             msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode, input, null));
             
-        } catch (Exception e) {
+        } catch (Exception e) { // The message received has failed the check.
             
+            // Send a warning message to the console and data logger.
             sendStatusMessage(String.format ("%sWARNING: Error in message received from '%s'%s - %s[%s]%s",
                 Colour.RED.getColour(), sender, Colour.RESET.getColour(), Colour.BLUE.getColour(), e.getMessage(), Colour.RESET.getColour()), 
                 true, true);
             
             // Destroy the connection on the streams.
-            input.getClientOutput().setConnected(false);
-            input.setConnected(false);
+            input.getClientOutput().setConnected(false); // Destroy the OutputClient object.
+            input.setConnected(false); // Destroy the InputClient object.
             
-        }
-        
+        }   
     }
-
-    
 }
 
 
