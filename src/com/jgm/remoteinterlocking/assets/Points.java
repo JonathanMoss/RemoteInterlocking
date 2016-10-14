@@ -41,24 +41,26 @@ public class Points {
     }
     
     /**
+     * This method sets if the points are detected, or otherwise.
      * 
-     * @param detection <code></code>
+     * Note: this method should only be called as a result of a status update from the Lineside Module.
+     * @param detection <code>Boolean</code> 'true' indicates that the points are detected, otherwise 'false'.
      */
     public synchronized void setDetection (Boolean detection) {
         this.arePointsDetected = detection;
     }
     
     /**
-     * 
-     * @return <code></code>
+     * This method returns the position of the points.
+     * @return <code>PointsPosition</code> 'NORMAL', 'REVERSE' or 'UNKNOWN'
      */
     public synchronized PointsPosition getPointsPosition() {
         return this.position;
     }
     
     /**
-     * 
-     * @return 
+     * This method returns the detection status of the points.
+     * @return <code>Boolean</code> 'true' indicates that the points are detected, otherwise 'false'.
      */
     public synchronized Boolean getDetectionStatus() {
         return this.arePointsDetected;

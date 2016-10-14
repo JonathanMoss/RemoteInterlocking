@@ -1,12 +1,22 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
 import com.jgm.remoteinterlocking.Colour;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getControlledSignalAspect;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getNonControlledSignalAspect;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getPointsDetectionStatus;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getPointsPosition;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getRemoteInterlockingName;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.getTrainDetectionStatus;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.setupAssets;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.updateControlledSignalAspect;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.updateNonControlledSignalAspect;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.updatePoints;
+import static com.jgm.remoteinterlocking.RemoteInterlocking.updateTrainDetectionSection;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
+import com.jgm.remoteinterlocking.assets.Aspects;
 import com.jgm.remoteinterlocking.assets.PointsPosition;
+import com.jgm.remoteinterlocking.assets.TrainDetectionStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -29,15 +39,15 @@ public abstract class MessageHandler {
             switch (msgStack.get(0).getMsgDirection()) {
                 case OUTGOING:
                     sendMessage(msgStack.get(0));
-                    sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
-                        msgStack.get(0).getMsgReceiver(), Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
-                    true, true);
+                    //sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
+                        //msgStack.get(0).getMsgReceiver(), Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
+                        //true, true);
                     break;
                 case INCOMING:
                 // Display a message to the console and DataLogger.
-                    sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
-                        Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
-                    true, true);
+                    //sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
+                        //Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
+                        //true, true);
                     switch (msgStack.get(0).getMsgType()) {
                         case HAND_SHAKE:
                             outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
@@ -47,12 +57,43 @@ public abstract class MessageHandler {
                         case SETUP:
                             // Setup is used following the initial upload from the DB of the lineside assets, the RI requests an update of the status of the assets from the Lineside Module.
                             String msgBody[] = msgStack.get(0).getMsgBody().split("\\.");
-                                if (Arrays.toString(msgBody).contains("POINTS")) {
-                                    updatePoints(msgBody[1], PointsPosition.valueOf(msgBody[2]), Boolean.valueOf(msgBody[3]));
-                                    sendStatusMessage(String.format ("Points Status Update: %s[Points: %s, Position: %s, Detection: %s]%s",
-                                        Colour.BLUE.getColour(), msgBody[1], msgBody[2], msgBody[3], Colour.RESET.getColour()),
-                                        true, true);
-                                }
+                             
+                            if (Arrays.toString(msgBody).contains("POINTS")) {
+                                // Example: POINTS.994.NORMAL.TRUE   
+                                updatePoints(msgBody[1], PointsPosition.valueOf(msgBody[2]), Boolean.valueOf(msgBody[3]));
+                                sendStatusMessage(String.format ("Points Status Update: %s[Points: %s, Position: %s, Detection: %s]%s",
+                                    Colour.BLUE.getColour(), msgBody[1], getPointsPosition(msgBody[1]), getPointsDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
+                                    true, true);
+                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
+       
+                                
+                            } else if (Arrays.toString(msgBody).contains("AUTOMATIC_SIGNALS")) {
+                                // Example: NON_CONTROLLED_SIGNAL.CE.105.RED
+                                updateNonControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
+                                sendStatusMessage(String.format ("Non-Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
+                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getNonControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
+                                    true, true);
+                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender()); 
+                                
+                            } else if (Arrays.toString(msgBody).contains("TRAIN_DETECTION")) {
+                                // Example: TRAIN_DETECTION.T117.OCCUPIED
+                                updateTrainDetectionSection(msgBody[1], TrainDetectionStatus.valueOf(msgBody[2]));
+                                sendStatusMessage(String.format ("Train Detection Section Status Update: %s[Section: %s, Status: %s]%s",
+                                    Colour.BLUE.getColour(), msgBody[1], getTrainDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
+                                    true, true); 
+                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
+  
+                 
+                            } else if (Arrays.toString(msgBody).contains("CONTROLLED_SIGNAL")) {
+                                // Example: CONTROLLED_SIGNAL.CE.105.RED
+                                updateControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
+                                sendStatusMessage(String.format ("Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
+                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
+                                    true, true);  
+                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
+
+                            }
+                                
                         case STATE_CHANGE:
                             break;
                         case NULL:
@@ -152,9 +193,9 @@ public abstract class MessageHandler {
                 hashCode = Integer.parseInt(incomingMessage[3]);
             }
             
-            if (setupAssets(sender)) { // Check if we need to setup the Remote Client assets.
-                ListenForRequests.connectionValidated(sender, input.getClientOutput());
-            }
+            setupAssets(sender);  // Check if we need to setup the Remote Client assets.
+            ListenForRequests.connectionValidated(sender, input.getClientOutput());
+            
             
             // Add the message to the message stack now it has been validated as much as possible.
             msgStack.add(new Message(sender, getRemoteInterlockingName(), MessageDirection.INCOMING, type, messageText, hashCode, input, null));

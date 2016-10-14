@@ -10,5 +10,5 @@ package com.jgm.remoteinterlocking.assets;
  * @author joth
  */
 public enum PointsPosition {
-    NORMAL, REVERSE;
+    NORMAL, REVERSE, UNKNOWN;
 }

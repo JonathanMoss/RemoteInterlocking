@@ -29,6 +29,14 @@ public class ClientInput extends DataInputStream implements Runnable {
         
     }
     
+    /**
+     * This method returns the connected status flag of this object.
+     * @return <code>Boolean</code> 'true' connected, otherwise 'false;.
+     */
+    protected synchronized Boolean getConnected() {
+        return this.connected;
+    }
+    
     protected synchronized ClientOutput getClientOutput() {
         return this.clientOutput;
     }

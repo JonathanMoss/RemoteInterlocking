@@ -58,7 +58,7 @@ public class RemoteInterlocking {
      * The <code>String</code> is the key, and contains the LineSideModule Identity.
      * The <code>Boolean</code> is the value, 'true' indicates that full setup is needed, otherwise 'false'.
      */
-    private static HashMap<String, Boolean> linesideModuleSetupComplete = new HashMap<>();
+    private static final HashMap<String, Boolean> LSM_SETUP_COMPLETE = new HashMap<>();
     public static ListenForRequests lsModListen;
     
     // Database variables
@@ -119,17 +119,11 @@ public class RemoteInterlocking {
         }
         
         // 3) Connect to the database and check if the identity passed on the command line is valid.
-        sendStatusMessage("Connecting to the remote DB to validate command line arguments...", 
-            false, false);
         try {
             rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM Remote_Interlocking WHERE identity = '%s';", riIdentity));
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
-                true, false);
+
         } catch (SQLException ex) {
-            sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
-                true, false);
+
             sendStatusMessage(String.format ("%s%s%s",
                 Colour.RED.getColour(), "ERROR: Cannot connect to the remote DB, cannot continue.", Colour.RESET.getColour()),
                 true, false);
@@ -250,7 +244,7 @@ public class RemoteInterlocking {
             while (rs.next()) {
                 LS_MOD.put(rs.getString("identity"), rs.getInt("index_key"));
                 lsModOutput += rs.getString("identity") + "(" + rs.getInt("index_key") + ")" + ((rs.isLast()) ? "" : ", ");
-                linesideModuleSetupComplete.put(rs.getString("identity"), false);
+                LSM_SETUP_COMPLETE.put(rs.getString("identity"), false);
                 
             }
             
@@ -302,14 +296,14 @@ public class RemoteInterlocking {
                     Thread.sleep(500);
                     MessageHandler.processMessageStack();
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(RemoteInterlocking.class.getName()).log(Level.SEVERE, null, ex);
+                    
                 }
             }
         });
         processMessages.setName("Processing Messages Thread");
         processMessages.start();
 
-       while (linesideModuleSetupComplete.containsValue(false)) {
+       while (LSM_SETUP_COMPLETE.containsValue(false)) {
             // Loop until setup complete
         }
         
@@ -335,8 +329,8 @@ public class RemoteInterlocking {
     public static synchronized Boolean setupAssets(String lineSideModuleIdentity) {
         
         // Check to see if the LSM passed to the method needs setting up - false indicates 'NO'.
-        if (linesideModuleSetupComplete.containsKey(lineSideModuleIdentity)) {
-            if (linesideModuleSetupComplete.get(lineSideModuleIdentity).equals(true)) {
+        if (LSM_SETUP_COMPLETE.containsKey(lineSideModuleIdentity)) {
+            if (LSM_SETUP_COMPLETE.get(lineSideModuleIdentity).equals(true)) {
                 return false;
             }
         }
@@ -381,9 +375,9 @@ public class RemoteInterlocking {
      */
     public static synchronized void setSetupComplete (String lineSideModule) {
     
-        if (linesideModuleSetupComplete.containsKey(lineSideModule)) {
-            linesideModuleSetupComplete.remove(lineSideModule);
-            linesideModuleSetupComplete.put(lineSideModule, true);
+        if (LSM_SETUP_COMPLETE.containsKey(lineSideModule)) {
+            LSM_SETUP_COMPLETE.remove(lineSideModule);
+            LSM_SETUP_COMPLETE.put(lineSideModule, true);
         } 
     }    
     
@@ -418,11 +412,12 @@ public class RemoteInterlocking {
     * This method creates a ControlledSignal object and adds that object to the CONTROLLED_SIGNALS array.
     * This method is called during initial setup, when the Controlled Signal objects are being polled from the remote DB.
     * 
+    * @param prefix A <code>String</code> containing the prefix of the Controlled Signal.
     * @param signalIdentity A <code>String</code> containing the identity of the Controlled Signal.
-    * @param lsm A <code>String</code> containing the parent Lineside Module.
+    * @param lineSideModuleIdentity A <code>String</code> containing the parent Lineside Module.
     */
-    public static synchronized void addControlledSignalsToArray (String signalIdentity, String lsm) {
-        // TODO
+    public static synchronized void addControlledSignalsToArray (String prefix, String signalIdentity, String lineSideModuleIdentity) {
+        CONTROLLED_SIGNALS.add(new ControlledSignal(prefix, signalIdentity, lineSideModuleIdentity));
     }
     
     /**
@@ -430,19 +425,25 @@ public class RemoteInterlocking {
      * @param signalIdentity <code>String</code> containing the Identity of Controlled Signal.
      * @param aspect <code>Aspects</code> containing the current aspect of the Controlled Signal
      */
-    public static synchronized void updateControlledSignalAspect (String signalIdentity, Aspects aspect) {
-       // TODO
+    public static synchronized void updateControlledSignalAspect (String signalPrefix, String signalIdentity, Aspects aspect) {
+       for (int i = 0; i < CONTROLLED_SIGNALS.size(); i++) {
+            if (CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
+                CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
+                break;
+            }
+        }
     }
     
     /**
     * This method creates a NonControlledSignal object and adds that object to the NON_CONTROLLED_SIGNALS array.
     * This method is called during initial setup, when the Non-Controlled Signal objects are being polled from the remote DB.
     * 
+    * @param prefix A <code>String</code> containing the prefix of the Non-Controlled Signal.
     * @param signalIdentity A <code>String</code> containing the identity of the Non-Controlled Signal.
-    * @param lsm A <code>String</code> containing the parent Lineside Module.
+    * @param lineSideModuleIdentity A <code>String</code> containing the parent Lineside Module.
     */
-    public static synchronized void addNonControlledSignalsToArray (String signalIdentity, String lsm) {
-        // TODO
+    public static synchronized void addNonControlledSignalsToArray (String prefix, String signalIdentity, String lineSideModuleIdentity) {
+        NON_CONTROLLED_SIGNALS.add(new NonControlledSignal(prefix, signalIdentity, lineSideModuleIdentity));
     }
     
     /**
@@ -450,8 +451,13 @@ public class RemoteInterlocking {
      * @param signalIdentity <code>String</code> containing the Identity of Non-Controlled Signal.
      * @param aspect <code>Aspects</code> containing the current aspect of the Non-Controlled Signal.
      */
-    public static synchronized void updateNonControlledSignalAspect (String signalIdentity, Aspects aspect ) {
-       // TODO
+    public static synchronized void updateNonControlledSignalAspect (String signalPrefix, String signalIdentity, Aspects aspect) {
+       for (int i = 0; i < NON_CONTROLLED_SIGNALS.size(); i++) {
+            if (NON_CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && NON_CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
+                NON_CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
+                break;
+            }
+        }
     }
     
     /**
@@ -609,7 +615,7 @@ public class RemoteInterlocking {
         
         // Iterate through the resultSet and add the Controlled Signal Objects to the ControlledSignal Array - displaying the details to the console and Data Logger.
         while (rs.next()) {
-            addControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
+            addControlledSignalsToArray (rs.getString("prefix"), rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%-20s%-9s%s", 
                 Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
                 true, true);
@@ -642,14 +648,14 @@ public class RemoteInterlocking {
         
         // Iterate through the resultSet and add the Non-Controlled Signal Objects to the NonControlledSignal Array - displaying the details to the console and Data Logger.
         while (rs.next()) {
-            addNonControlledSignalsToArray (rs.getString("prefix") + rs.getString("identity"), lineSideModuleIdentity);
+            addNonControlledSignalsToArray (rs.getString("prefix"), rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%-23s%s%s", 
                 Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
                 true, true);
         }
 
         // Send a request the the corresponding LineSideModule requesting an update to all the Non-Controlled Signals.
-        MessageHandler.outGoingMessage("UPDATE.NON_CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
+        MessageHandler.outGoingMessage("UPDATE.AUTOMATIC_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
        
     }
@@ -685,5 +691,87 @@ public class RemoteInterlocking {
         MessageHandler.outGoingMessage("UPDATE.TRAIN_DETECTION.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
             
+    }
+    
+    /**
+     * This method returns the status of the Train Detection Status
+     * @param identity <code>String</code> The identity of the Train Detection Section.
+     * @return <code>TrainDetectionStatus</code> The status of the Train Detection Section.
+     */
+    public static synchronized TrainDetectionStatus getTrainDetectionStatus (String identity) {
+        
+        for (int i = 0; i < TRAIN_DETECTION_SECTIONS.size(); i++) {
+            if (TRAIN_DETECTION_SECTIONS.get(i).getSectionIdentity().equals(identity) ) {
+                return TRAIN_DETECTION_SECTIONS.get(i).getStatus();
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * This method returns the Current Signal Aspect of a Controlled Signal.
+     * @param signalPrefix <code>String</code> The prefix of the signal.
+     * @param signalIdentity <code>String</code> The identity of the signal.
+     * @return <code>Aspects</code> The current aspect of the signal.
+     */
+    public static synchronized Aspects getControlledSignalAspect (String signalPrefix, String signalIdentity) {
+        
+        for (int i = 0; i < CONTROLLED_SIGNALS.size(); i++) {
+            if (CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix) && CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity)) {
+                return CONTROLLED_SIGNALS.get(i).getCurrentAspect();
+            }
+        }
+        
+        return null;
+    }
+    
+        /**
+     * This method returns the Current Signal Aspect of a Non-Controlled Signal.
+     * @param signalPrefix <code>String</code> The prefix of the signal.
+     * @param signalIdentity <code>String</code> The identity of the signal.
+     * @return <code>Aspects</code> The current aspect of the signal.
+     */
+    public static synchronized Aspects getNonControlledSignalAspect (String signalPrefix, String signalIdentity) {
+        
+        for (int i = 0; i < NON_CONTROLLED_SIGNALS.size(); i++) {
+            if (NON_CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix) && NON_CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity)) {
+                return NON_CONTROLLED_SIGNALS.get(i).getCurrentAspect();
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * This method returns the Position of the Points.
+     * @param pointsIdentity <code>String</code> The identity of the points.
+     * @return <code>PointsPosition</code> the position of the points.
+     */
+    public static synchronized PointsPosition getPointsPosition (String pointsIdentity) {
+        
+        for (int i = 0; i < POINTS.size(); i++) {
+            if (POINTS.get(i).getPointsIdentity().equals(pointsIdentity)) {
+                return POINTS.get(i).getPointsPosition();
+            }    
+        }
+        
+        return null;
+    }
+    
+    /**
+     * This method returns the Detection Status of the points.
+     * @param pointsIdentity <code>String</code> The identity of the points.
+     * @return <code>Boolean</code> 'true; indicates the points are detected, otherwise 'false' is returned.
+     */
+    public static synchronized Boolean getPointsDetectionStatus (String pointsIdentity) {
+        
+        for (int i = 0; i < POINTS.size(); i++) {
+            if (POINTS.get(i).getPointsIdentity().equals(pointsIdentity)) {
+                return POINTS.get(i).getDetectionStatus();
+            }    
+        }
+        
+        return null;
     }
 }

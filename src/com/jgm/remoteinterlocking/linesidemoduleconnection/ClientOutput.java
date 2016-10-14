@@ -1,7 +1,5 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
-import com.jgm.remoteinterlocking.Colour;
-import com.jgm.remoteinterlocking.RemoteInterlocking;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,6 +19,7 @@ public class ClientOutput extends DataOutputStream implements Runnable {
      * @param out An <code>OutputStream</code> object from a connected socket. 
      */
     protected ClientOutput(OutputStream out) {
+        
         super(out);
     }
 
@@ -32,6 +31,14 @@ public class ClientOutput extends DataOutputStream implements Runnable {
      */
     protected synchronized void setConnected (Boolean connected) {
         this.connected = connected;
+    }
+    
+    /**
+     * This method returns the connected status flag of this object.
+     * @return <code>Boolean</code> 'true' connected, otherwise 'false;.
+     */
+    protected synchronized Boolean getConnected() {
+        return this.connected;
     }
     
     /**

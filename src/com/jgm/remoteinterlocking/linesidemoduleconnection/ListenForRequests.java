@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +24,10 @@ public class ListenForRequests extends Thread {
     private final int port; // The port number to listen for incoming connection requests.
     public static HashMap <String, ClientOutput> clientOutput = new HashMap<>(); // This map holds a reference to the Client Output Objects.
     private static int connectionRequests = 1; // A static integer that holds a tally of Connection Requests from remote clients.
+    private static int threadCount = 1;
+    private static final HashMap <Integer, ClientInput> INPUT = new HashMap<>();
+    private static final HashMap <Integer, ClientOutput> OUTPUT = new HashMap<>();
+    private static final HashMap <Integer, Thread> THREAD = new HashMap<>();
     
     /**
      * This is the constructor method for the ListenForRequests.
@@ -32,6 +37,45 @@ public class ListenForRequests extends Thread {
      */
     public ListenForRequests (int port) {
         this.port = port;
+    }
+    
+    // This method makes sure that terminated threads and input/output objects are properly destroyed and removed from the ArrayLists.
+    private static void cleanUpObjects() {
+        
+        // Clean up THREAD objects.
+        ArrayList <Integer> index = new ArrayList<>();
+        
+        THREAD.entrySet().stream().filter((entry) -> (entry.getValue().getState().equals(State.TERMINATED))).forEach((entry) -> {
+            index.add(entry.getKey());
+        });
+        
+        for (int i = 0; i < index.size(); i++) {
+           THREAD.remove(index.get(i));
+        }
+        
+        // Clean up OUTPUT objects.
+        index.clear();
+        
+        OUTPUT.entrySet().stream().filter((entry) -> (!entry.getValue().getConnected())).forEach((entry) -> {
+            index.add(entry.getKey());
+        });
+        
+        for (int i = 0; i < index.size(); i++) {
+           OUTPUT.remove(index.get(i));
+        }
+        
+        // Clean up INPUT objects.
+        index.clear();
+        
+        INPUT.entrySet().stream().filter((entry) -> (!entry.getValue().getConnected())).forEach((entry) -> {
+            index.add(entry.getKey());
+        });
+        
+        for (int i = 0; i < index.size(); i++) {
+           INPUT.remove(index.get(i));
+        }
+        
+   
     }
     
     @Override
@@ -50,14 +94,19 @@ public class ListenForRequests extends Thread {
             do { 
                 Socket sock = this.listeningSocket.accept(); // Wait for, and accept any incoming connection requests.
                 // Set up the clientOutput and clientInput Streams and Threads.
-                ClientOutput output;
-                Thread threadOutput = new Thread (output = new ClientOutput(sock.getOutputStream()));
-                threadOutput.setName("ClientOutput Thread");
-                threadOutput.start();
-                
-                Thread threadInput = new Thread (new ClientInput (sock.getInputStream(), output));
-                threadInput.setName("ClientInput Thread");
-                threadInput.start();
+                OUTPUT.put(connectionRequests, new ClientOutput(sock.getOutputStream()));
+                THREAD.put(threadCount, new Thread (OUTPUT.get(connectionRequests)));
+                THREAD.get(threadCount).setName(String.format ("ClientOutput Thread [%s]", connectionRequests));
+                THREAD.get(threadCount).start();
+                threadCount ++;
+
+                INPUT.put(connectionRequests, new ClientInput(sock.getInputStream(),OUTPUT.get(connectionRequests)));
+                THREAD.put(threadCount, new Thread (INPUT.get(connectionRequests)));
+                THREAD.get(threadCount).setName(String.format ("ClientInput Thread [%s]", connectionRequests));
+                THREAD.get(threadCount).start();
+                threadCount ++;
+
+                cleanUpObjects(); // Clean up any unused THREAD/INPUT/OUTPUT objects.
                 
                 // Display a message to the console and Data Logger.
                 sendStatusMessage(String.format("Connection request received [%s]", 
@@ -90,8 +139,7 @@ public class ListenForRequests extends Thread {
                 true, true);
             System.exit(0);
         }
-    
-    
+
   }
     /**
      * This method is called when a connection to a Remote Client has been validated.
