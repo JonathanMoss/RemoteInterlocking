@@ -14,6 +14,6 @@ package com.jgm.remoteinterlocking.linesidemoduleconnection;
  */
 public enum MessageType {
     
-    ACK, SETUP, STATE_CHANGE, HAND_SHAKE, NULL, RESEND;
+    ACK, SETUP, STATE_CHANGE, REQUEST;
     
 }
