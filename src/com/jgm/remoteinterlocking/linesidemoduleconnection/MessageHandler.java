@@ -39,23 +39,16 @@ public abstract class MessageHandler {
             switch (msgStack.get(0).getMsgDirection()) {
                 case OUTGOING:
                     sendMessage(msgStack.get(0));
-                    //sendStatusMessage(String.format ("Message T/X (%s): %s[%s|%s|%s|%s|%s]%s", 
-                        //msgStack.get(0).getMsgReceiver(), Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
-                        //true, true);
+                    
                     break;
                 case INCOMING:
-                // Display a message to the console and DataLogger.
-                    //sendStatusMessage(String.format ("Message R/X: %s[%s|%s|%s|%s|%s]%s", 
-                        //Colour.BLUE.getColour(), msgStack.get(0).getMsgSender(), msgStack.get(0).getMsgType().toString(), msgStack.get(0).getMsgBody(), msgStack.get(0).getMsgHash(), MESSAGE_END, Colour.RESET.getColour()),
-                        //true, true);
+
                     switch (msgStack.get(0).getMsgType()) {
-                        case HAND_SHAKE:
-                            outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
-                            break;
+                        
                         case ACK:
                             break;
-                        case SETUP:
-                            // Setup is used following the initial upload from the DB of the lineside assets, the RI requests an update of the status of the assets from the Lineside Module.
+                        case STATE_CHANGE:
+                            
                             String msgBody[] = msgStack.get(0).getMsgBody().split("\\.");
                              
                             if (Arrays.toString(msgBody).contains("POINTS")) {
@@ -64,16 +57,20 @@ public abstract class MessageHandler {
                                 sendStatusMessage(String.format ("Points Status Update: %s[Points: %s, Position: %s, Detection: %s]%s",
                                     Colour.BLUE.getColour(), msgBody[1], getPointsPosition(msgBody[1]), getPointsDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
                                     true, true);
-                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
        
+                            } else if (Arrays.toString(msgBody).contains("CONTROLLED_SIGNAL")) {
+                                // Example: CONTROLLED_SIGNAL.CE.105.RED
+                                updateControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
+                                sendStatusMessage(String.format ("Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
+                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
+                                    true, true);  
                                 
                             } else if (Arrays.toString(msgBody).contains("AUTOMATIC_SIGNALS")) {
-                                // Example: NON_CONTROLLED_SIGNAL.CE.105.RED
+                                // Example: AUTOMATIC_SIGNAL.CE.105.RED
                                 updateNonControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
                                 sendStatusMessage(String.format ("Non-Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
                                     Colour.BLUE.getColour(), msgBody[1], msgBody[2], getNonControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
                                     true, true);
-                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender()); 
                                 
                             } else if (Arrays.toString(msgBody).contains("TRAIN_DETECTION")) {
                                 // Example: TRAIN_DETECTION.T117.OCCUPIED
@@ -81,28 +78,14 @@ public abstract class MessageHandler {
                                 sendStatusMessage(String.format ("Train Detection Section Status Update: %s[Section: %s, Status: %s]%s",
                                     Colour.BLUE.getColour(), msgBody[1], getTrainDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
                                     true, true); 
-                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
-  
-                 
-                            } else if (Arrays.toString(msgBody).contains("CONTROLLED_SIGNAL")) {
-                                // Example: CONTROLLED_SIGNAL.CE.105.RED
-                                updateControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
-                                sendStatusMessage(String.format ("Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
-                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
-                                    true, true);  
-                                outGoingMessage(Integer.toString(msgStack.get(0).getMsgHash()), MessageType.ACK, msgStack.get(0).getMsgSender());
 
                             }
-                                
-                        case STATE_CHANGE:
+
                             break;
-                        case NULL:
-                            break;
-                        case RESEND: // Re-send the last message.
-                            break;
-                }
+                       
+                        }
                     break;
-            }
+                }
             
             msgStack.remove(0);
         } 
@@ -174,7 +157,7 @@ public abstract class MessageHandler {
             }
             
             // Check that END_MESSAGE was the last part to be received.
-            if (!incomingMessage[4].equals("END_MESSAGE")) {
+            if (!incomingMessage[4].equals(MESSAGE_END)) {
                 throw new Exception("Malformed message received");
             }
             

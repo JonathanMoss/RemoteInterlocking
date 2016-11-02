@@ -11,7 +11,6 @@ import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler;
-import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -585,8 +584,6 @@ public class RemoteInterlocking {
                 true, true);
         }
         
-        // Send a request the the corresponding LineSideModule requesting an update to all the Points.
-        MessageHandler.outGoingMessage("UPDATE.POINTS.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
     }
     
@@ -621,8 +618,6 @@ public class RemoteInterlocking {
                 true, true);
         }
         
-        // Send a request the the corresponding LineSideModule requesting an update to all the Controlled Signals.
-        MessageHandler.outGoingMessage("UPDATE.CONTROLLED_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
             
     }
@@ -654,8 +649,6 @@ public class RemoteInterlocking {
                 true, true);
         }
 
-        // Send a request the the corresponding LineSideModule requesting an update to all the Non-Controlled Signals.
-        MessageHandler.outGoingMessage("UPDATE.AUTOMATIC_SIGNALS.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
        
     }
@@ -687,8 +680,6 @@ public class RemoteInterlocking {
                 true, true);
         }
         
-        // Send a request the the corresponding LineSideModule requesting an update to all the Non-Controlled Signals.
-        MessageHandler.outGoingMessage("UPDATE.TRAIN_DETECTION.ALL", MessageType.SETUP, lineSideModuleIdentity);
         System.out.println();
             
     }
