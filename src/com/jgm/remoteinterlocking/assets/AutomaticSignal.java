@@ -5,7 +5,7 @@ package com.jgm.remoteinterlocking.assets;
  * @author Jonathan Moss
  * @version v1.0 October 2016
  */
-public class NonControlledSignal {
+public class AutomaticSignal {
 
     private final String prefix, identity, lineSideModuleIdentity;
     private Aspects currentAspect;
@@ -16,7 +16,7 @@ public class NonControlledSignal {
       * @param identity <code>String</code> The identity of the signal.
       * @param lineSideModuleIdentity <code>String</code> The identity of the Lineside Module associated with this signal.
       */
-    public NonControlledSignal (String prefix, String identity, String lineSideModuleIdentity) {
+    public AutomaticSignal (String prefix, String identity, String lineSideModuleIdentity) {
         
         this.prefix = prefix;
         this.identity = identity;

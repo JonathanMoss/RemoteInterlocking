@@ -1,6 +1,6 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
-import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.TerminalColour;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getFailed;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getOK;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
@@ -85,10 +85,10 @@ public class ListenForRequests extends Thread {
             
             // Send a message to the console and Data Logger.
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                 false, true);
             sendStatusMessage(String.format (" - %s[listening on port: %s]%s",
-                Colour.BLUE.getColour(), this.listeningSocket.getLocalPort(), Colour.RESET.getColour()),
+                TerminalColour.BLUE.getColour(), this.listeningSocket.getLocalPort(), TerminalColour.RESET.getColour()),
                 true, true);
             
             do { 
@@ -116,7 +116,7 @@ public class ListenForRequests extends Thread {
                     sock.getRemoteSocketAddress().toString().substring(1)), 
                     false, true);
                 sendStatusMessage(String.format ("%s%s%s",
-                    Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                    TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                     true, true);
                 connectionRequests ++;
                 
@@ -124,18 +124,18 @@ public class ListenForRequests extends Thread {
             
         } catch (BindException b) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, true);
             sendStatusMessage(String.format ("%sERROR: There is a problem with the listening port configuration, cannot continue.%s",
-                Colour.RED.getColour(), Colour.RESET.getColour()), 
+                TerminalColour.RED.getColour(), TerminalColour.RESET.getColour()), 
                 true, true);
             System.exit(0);
         } catch (IOException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, true);
             sendStatusMessage(String.format ("%sERROR: Cannot listen for incoming connections from the LineSide Module(s), cannot continue.%s",
-                Colour.RED.getColour(), Colour.RESET.getColour()), 
+                TerminalColour.RED.getColour(), TerminalColour.RESET.getColour()), 
                 true, true);
             System.exit(0);
         }

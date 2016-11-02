@@ -1,6 +1,6 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
-import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.TerminalColour;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getControlledSignalAspect;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getNonControlledSignalAspect;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.getPointsDetectionStatus;
@@ -55,28 +55,28 @@ public abstract class MessageHandler {
                                 // Example: POINTS.994.NORMAL.TRUE   
                                 updatePoints(msgBody[1], PointsPosition.valueOf(msgBody[2]), Boolean.valueOf(msgBody[3]));
                                 sendStatusMessage(String.format ("Points Status Update: %s[Points: %s, Position: %s, Detection: %s]%s",
-                                    Colour.BLUE.getColour(), msgBody[1], getPointsPosition(msgBody[1]), getPointsDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
+                                    TerminalColour.BLUE.getColour(), msgBody[1], getPointsPosition(msgBody[1]), getPointsDetectionStatus(msgBody[1]), TerminalColour.RESET.getColour()),
                                     true, true);
        
                             } else if (Arrays.toString(msgBody).contains("CONTROLLED_SIGNAL")) {
                                 // Example: CONTROLLED_SIGNAL.CE.105.RED
                                 updateControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
                                 sendStatusMessage(String.format ("Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
-                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
+                                    TerminalColour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), TerminalColour.RESET.getColour()),
                                     true, true);  
                                 
                             } else if (Arrays.toString(msgBody).contains("AUTOMATIC_SIGNAL")) {
                                 // Example: AUTOMATIC_SIGNAL.CE.105.RED
                                 updateNonControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
                                 sendStatusMessage(String.format ("Non-Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
-                                    Colour.BLUE.getColour(), msgBody[1], msgBody[2], getNonControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
+                                    TerminalColour.BLUE.getColour(), msgBody[1], msgBody[2], getNonControlledSignalAspect(msgBody[1], msgBody[2]), TerminalColour.RESET.getColour()),
                                     true, true);
                                 
                             } else if (Arrays.toString(msgBody).contains("TRAIN_DETECTION")) {
                                 // Example: TRAIN_DETECTION.T117.OCCUPIED
                                 updateTrainDetectionSection(msgBody[1], TrainDetectionStatus.valueOf(msgBody[2]));
                                 sendStatusMessage(String.format ("Train Detection Section Status Update: %s[Section: %s, Status: %s]%s",
-                                    Colour.BLUE.getColour(), msgBody[1], getTrainDetectionStatus(msgBody[1]), Colour.RESET.getColour()),
+                                    TerminalColour.BLUE.getColour(), msgBody[1], getTrainDetectionStatus(msgBody[1]), TerminalColour.RESET.getColour()),
                                     true, true); 
 
                             }
@@ -94,9 +94,7 @@ public abstract class MessageHandler {
     /**
      * This method correctly formats a message, and sends it to the Remote Client Specified
      * 
-     * @param message A <code>String</code> containing the message body (content)
-     * @param type A <code>MessageType</code> constant representing the meaning of / reason for the message.
-     * @param remoteClientIdentity A <code>String</code> containing the Remote Client Identity.
+     * @param message A <code>Message</code> object.
      */
     private static synchronized void sendMessage (Message msg) {
         
@@ -186,7 +184,7 @@ public abstract class MessageHandler {
             
             // Send a warning message to the console and data logger.
             sendStatusMessage(String.format ("%sWARNING: Error in message received from '%s'%s - %s[%s]%s",
-                Colour.RED.getColour(), sender, Colour.RESET.getColour(), Colour.BLUE.getColour(), e.getMessage(), Colour.RESET.getColour()), 
+                TerminalColour.RED.getColour(), sender, TerminalColour.RESET.getColour(), TerminalColour.BLUE.getColour(), e.getMessage(), TerminalColour.RESET.getColour()), 
                 true, true);
             
             // Destroy the connection on the streams.

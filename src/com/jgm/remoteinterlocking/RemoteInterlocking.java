@@ -2,7 +2,7 @@ package com.jgm.remoteinterlocking;
 
 import com.jgm.remoteinterlocking.assets.Aspects;
 import com.jgm.remoteinterlocking.assets.ControlledSignal;
-import com.jgm.remoteinterlocking.assets.NonControlledSignal;
+import com.jgm.remoteinterlocking.assets.AutomaticSignal;
 import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.assets.PointsPosition;
 import com.jgm.remoteinterlocking.assets.TrainDetectionSection;
@@ -11,6 +11,7 @@ import com.jgm.remoteinterlocking.database.MySqlConnect;
 import com.jgm.remoteinterlocking.datalogger.DataLoggerClient;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.ListenForRequests;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler;
+import com.jgm.remoteinterlocking.tecui.TechniciansUserInterface;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Application;
 
 /**
  *
@@ -74,7 +76,7 @@ public class RemoteInterlocking {
     // Asset Variables.
     private static final ArrayList<Points> POINTS = new ArrayList<>();
     private static final ArrayList<ControlledSignal> CONTROLLED_SIGNALS = new ArrayList<>();
-    private static final ArrayList<NonControlledSignal> NON_CONTROLLED_SIGNALS = new ArrayList<>();
+    private static final ArrayList<AutomaticSignal> AUTOMATIC_SIGNALS = new ArrayList<>();
     private static final ArrayList<TrainDetectionSection> TRAIN_DETECTION_SECTIONS = new ArrayList<>(); 
     
     public static void main(String[] args) {
@@ -94,10 +96,10 @@ public class RemoteInterlocking {
             riIdentity = args[0].trim();
         } else {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Missing command line argument, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Missing command line argument, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         }
@@ -105,15 +107,15 @@ public class RemoteInterlocking {
         // 2) Test if the remote interlocking ID is a String and between 5 - 15 characters A-Z, a-z, 0-9 and _.
         if (!riIdentity.matches("^[a-zA-Z_0-9_]{5,15}$")) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Invalid command line argument, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Invalid command line argument, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         } else {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                 true, false);
         }
         
@@ -124,7 +126,7 @@ public class RemoteInterlocking {
         } catch (SQLException ex) {
 
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Cannot connect to the remote DB, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Cannot connect to the remote DB, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         }
@@ -135,22 +137,22 @@ public class RemoteInterlocking {
             rs.first();
             if (rs.getString("identity").equals(riIdentity)) {
                 sendStatusMessage(String.format ("%s%s%s",
-                    Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                    TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                     false, false);
                 riIndex = rs.getInt("index_key");
                 riHostAddress = rs.getString("ip_address");
                 riPort = rs.getInt("port_number");
                 iIndex = rs.getInt("interlocking_index");
                 sendStatusMessage(String.format (" - %s[validated: %s]%s",
-                    Colour.BLUE.getColour(), riIdentity, Colour.RESET.getColour()),
+                    TerminalColour.BLUE.getColour(), riIdentity, TerminalColour.RESET.getColour()),
                     true, false);
             } 
         } catch (SQLException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Invalid command line argument, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Invalid command line argument, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         }
@@ -163,21 +165,21 @@ public class RemoteInterlocking {
                 MySqlConnect.getDbCon().insert(String.format ("UPDATE `Remote_Interlocking` SET `ip_address` = '%s' WHERE `index_key` = '%s';",
                     InetAddress.getLocalHost().getHostAddress(), riIndex));
                 sendStatusMessage(String.format ("%s%s%s",
-                    Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                    TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                     false, false);
                 sendStatusMessage(String.format (" - %s[actual: %s => DB: %s]%s",
-                    Colour.BLUE.getColour(), InetAddress.getLocalHost().getHostAddress(),
-                        riHostAddress, Colour.RESET.getColour()), 
+                    TerminalColour.BLUE.getColour(), InetAddress.getLocalHost().getHostAddress(),
+                        riHostAddress, TerminalColour.RESET.getColour()), 
                         true, false);
                 riHostAddress = InetAddress.getLocalHost().getHostAddress();
                 
             } 
         } catch (UnknownHostException | SQLException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "WARNING: Cannot update Remote DB with the IP address of this Remote Interlocking.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "WARNING: Cannot update Remote DB with the IP address of this Remote Interlocking.", TerminalColour.RESET.getColour()),
                 true, false);
         }
         
@@ -192,20 +194,20 @@ public class RemoteInterlocking {
                 iPort = rs.getInt("port_number");
                 iName = rs.getString("identity");
                 sendStatusMessage(String.format ("%s%s%s",
-                    Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                    TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                     false, false);
                 sendStatusMessage(String.format (" - %s[%s@%s:%s]%s",
-                    Colour.BLUE.getColour(), iName, iHostAddress, iPort, Colour.RESET.getColour()), 
+                    TerminalColour.BLUE.getColour(), iName, iHostAddress, iPort, TerminalColour.RESET.getColour()), 
                     true, false);
             } else {
                 throw new SQLException();
             }
         } catch (SQLException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Cannot obtain interlocking credentials from remote DB, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Cannot obtain interlocking credentials from remote DB, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         }
@@ -219,18 +221,18 @@ public class RemoteInterlocking {
             dlHostAddress = rs.getString("ip_address");
             dlPort = rs.getInt("port_number");
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                 false, false);
             sendStatusMessage(String.format (" - %s[%s:%s]%s",
-                Colour.BLUE.getColour(), dlHostAddress, dlPort, Colour.RESET.getColour()), 
+                TerminalColour.BLUE.getColour(), dlHostAddress, dlPort, TerminalColour.RESET.getColour()), 
                 true, false);
             dataLoggerDetails = true;
         } catch (SQLException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "WARNING: Cannot obtain Data Logger details from the remote DB.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "WARNING: Cannot obtain Data Logger details from the remote DB.", TerminalColour.RESET.getColour()),
                 true, false);
         }
         
@@ -248,17 +250,17 @@ public class RemoteInterlocking {
             }
             
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+                TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
                 false, false);
             sendStatusMessage(String.format (" - %s[%s]%s",
-                Colour.BLUE.getColour(), lsModOutput, Colour.RESET.getColour()), 
+                TerminalColour.BLUE.getColour(), lsModOutput, TerminalColour.RESET.getColour()), 
                 true, false);
         } catch (SQLException ex) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, false);
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), "ERROR: Cannot obtain LineSide Module details from remote DB, cannot continue.", Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), "ERROR: Cannot obtain LineSide Module details from remote DB, cannot continue.", TerminalColour.RESET.getColour()),
                 true, false);
             System.exit(0);
         }
@@ -311,10 +313,10 @@ public class RemoteInterlocking {
         // X) Attempt a connection to the Interlocking
         sendStatusMessage("Attempting a connection to the Interlocking...", false, true);
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+            TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
             true, true);
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.RED.getColour(), "ERROR: Cannot connect to the Interlocking, cannot continue.", Colour.RESET.getColour()),
+            TerminalColour.RED.getColour(), "ERROR: Cannot connect to the Interlocking, cannot continue.", TerminalColour.RESET.getColour()),
             true, true);
         //System.exit(0);
     }
@@ -341,7 +343,7 @@ public class RemoteInterlocking {
         } else {
             // Display a message to the console and Data Logger.
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, true);
             return false;
         }
@@ -359,12 +361,19 @@ public class RemoteInterlocking {
             setUpTrainDetection(index, lineSideModuleIdentity);
         } catch (SQLException e) {
             sendStatusMessage(String.format ("%s%s%s",
-                Colour.RED.getColour(), getFailed(), Colour.RESET.getColour()),
+                TerminalColour.RED.getColour(), getFailed(), TerminalColour.RESET.getColour()),
                 true, true);
             return false;
         }
 
         setSetupComplete(lineSideModuleIdentity); // Confirm the setup is complete.
+        
+        new Thread (()-> {
+            
+            Application.launch(TechniciansUserInterface.class);
+        
+        }).start();
+        
         return true;
     }
     
@@ -421,6 +430,7 @@ public class RemoteInterlocking {
     
     /**
      * This method is used to update the status of a particular Controlled Signal
+     * @param signalPrefix
      * @param signalIdentity <code>String</code> containing the Identity of Controlled Signal.
      * @param aspect <code>Aspects</code> containing the current aspect of the Controlled Signal
      */
@@ -428,13 +438,14 @@ public class RemoteInterlocking {
        for (int i = 0; i < CONTROLLED_SIGNALS.size(); i++) {
             if (CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
                 CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
+                TechniciansUserInterface.updateSignalAspect(CONTROLLED_SIGNALS.get(i));
                 break;
             }
         }
     }
     
     /**
-    * This method creates a NonControlledSignal object and adds that object to the NON_CONTROLLED_SIGNALS array.
+    * This method creates a AutomaticSignal object and adds that object to the AUTOMATIC_SIGNALS array.
     * This method is called during initial setup, when the Non-Controlled Signal objects are being polled from the remote DB.
     * 
     * @param prefix A <code>String</code> containing the prefix of the Non-Controlled Signal.
@@ -442,7 +453,7 @@ public class RemoteInterlocking {
     * @param lineSideModuleIdentity A <code>String</code> containing the parent Lineside Module.
     */
     public static synchronized void addNonControlledSignalsToArray (String prefix, String signalIdentity, String lineSideModuleIdentity) {
-        NON_CONTROLLED_SIGNALS.add(new NonControlledSignal(prefix, signalIdentity, lineSideModuleIdentity));
+        AUTOMATIC_SIGNALS.add(new AutomaticSignal(prefix, signalIdentity, lineSideModuleIdentity));
     }
     
     /**
@@ -451,9 +462,9 @@ public class RemoteInterlocking {
      * @param aspect <code>Aspects</code> containing the current aspect of the Non-Controlled Signal.
      */
     public static synchronized void updateNonControlledSignalAspect (String signalPrefix, String signalIdentity, Aspects aspect) {
-       for (int i = 0; i < NON_CONTROLLED_SIGNALS.size(); i++) {
-            if (NON_CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && NON_CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
-                NON_CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
+       for (int i = 0; i < AUTOMATIC_SIGNALS.size(); i++) {
+            if (AUTOMATIC_SIGNALS.get(i).getIdentity().equals(signalIdentity) && AUTOMATIC_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
+                AUTOMATIC_SIGNALS.get(i).setCurrentAspect(aspect);
                 break;
             }
         }
@@ -566,21 +577,21 @@ public class RemoteInterlocking {
         // Define and run the query.
         rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Points` WHERE `parentLinesideModule` = '%s';", index));
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
             true, true);
         System.out.println();
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.BLUE.getColour(), "Points", Colour.RESET.getColour()),
+            TerminalColour.BLUE.getColour(), "Points", TerminalColour.RESET.getColour()),
             true, true);
         sendStatusMessage(String.format ("%s------%s",
-            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            TerminalColour.BLUE.getColour(), TerminalColour.RESET.getColour()), 
             true, true);
 
         // Iterate through the resultSet and add the Points Objects to the PointsArray - displaying the details to the console and Data Logger.
         while (rs.next()) {
             addPointsToArray (rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%s%s", 
-                Colour.BLUE.getColour(), rs.getString("identity"), Colour.RESET.getColour()),
+                TerminalColour.BLUE.getColour(), rs.getString("identity"), TerminalColour.RESET.getColour()),
                 true, true);
         }
         
@@ -600,21 +611,21 @@ public class RemoteInterlocking {
         // Define and run the query.
         rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
             true, true);
         System.out.println();
         sendStatusMessage(String.format ("%s%-20s%-9s%s",
-            Colour.BLUE.getColour(), "Controlled Signals", "Type", Colour.RESET.getColour()),
+            TerminalColour.BLUE.getColour(), "Controlled Signals", "Type", TerminalColour.RESET.getColour()),
             true, true);
         sendStatusMessage(String.format ("%s----------------------------------------%s",
-            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            TerminalColour.BLUE.getColour(), TerminalColour.RESET.getColour()), 
             true, true);
         
         // Iterate through the resultSet and add the Controlled Signal Objects to the ControlledSignal Array - displaying the details to the console and Data Logger.
         while (rs.next()) {
             addControlledSignalsToArray (rs.getString("prefix"), rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%-20s%-9s%s", 
-                Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                TerminalColour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), TerminalColour.RESET.getColour()),
                 true, true);
         }
         
@@ -631,21 +642,21 @@ public class RemoteInterlocking {
         // Define and run the query.
         rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Non_Controlled_Signals` WHERE `parentLinesideModule` = '%s';", index));
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
             true, true);
         System.out.println();
         sendStatusMessage(String.format ("%s%-23s%-9s%s",
-            Colour.BLUE.getColour(), "Non-Controlled Signals", "Type", Colour.RESET.getColour()),
+            TerminalColour.BLUE.getColour(), "Non-Controlled Signals", "Type", TerminalColour.RESET.getColour()),
             true, true);
         sendStatusMessage(String.format ("%s-------------------------------------%s",
-            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            TerminalColour.BLUE.getColour(), TerminalColour.RESET.getColour()), 
             true, true);
         
-        // Iterate through the resultSet and add the Non-Controlled Signal Objects to the NonControlledSignal Array - displaying the details to the console and Data Logger.
+        // Iterate through the resultSet and add the Non-Controlled Signal Objects to the AutomaticSignal Array - displaying the details to the console and Data Logger.
         while (rs.next()) {
             addNonControlledSignalsToArray (rs.getString("prefix"), rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%-23s%s%s", 
-                Colour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                TerminalColour.BLUE.getColour(), rs.getString("prefix") + rs.getString("identity"), rs.getString("type"), TerminalColour.RESET.getColour()),
                 true, true);
         }
 
@@ -662,21 +673,21 @@ public class RemoteInterlocking {
         // Define and run the query.
         rs = MySqlConnect.getDbCon().query(String.format ("SELECT * FROM `Train_Detection` WHERE `parentLinesideModule` = '%s';", index));
         sendStatusMessage(String.format ("%s%s%s",
-            Colour.GREEN.getColour(), getOK(), Colour.RESET.getColour()),
+            TerminalColour.GREEN.getColour(), getOK(), TerminalColour.RESET.getColour()),
             true, true);
         System.out.println();
         sendStatusMessage(String.format ("%s%-9s%s%s",
-            Colour.BLUE.getColour(), "Section", "Type", Colour.RESET.getColour()),
+            TerminalColour.BLUE.getColour(), "Section", "Type", TerminalColour.RESET.getColour()),
             true, true);
         sendStatusMessage(String.format ("%s----------------------%s",
-            Colour.BLUE.getColour(), Colour.RESET.getColour()), 
+            TerminalColour.BLUE.getColour(), TerminalColour.RESET.getColour()), 
             true, true);
         
         // Iterate through the resultSet and add the Train Detection Section Objects to the TrainDetection Array - displaying the details to the console and Data Logger.
         while (rs.next()) {
             addTrainDetectionSectionsToArray (rs.getString("identity"), lineSideModuleIdentity);
             sendStatusMessage(String.format ("%s%-9s%-9s%s", 
-                Colour.BLUE.getColour(), rs.getString("identity"), rs.getString("type"), Colour.RESET.getColour()),
+                TerminalColour.BLUE.getColour(), rs.getString("identity"), rs.getString("type"), TerminalColour.RESET.getColour()),
                 true, true);
         }
         
@@ -725,9 +736,9 @@ public class RemoteInterlocking {
      */
     public static synchronized Aspects getNonControlledSignalAspect (String signalPrefix, String signalIdentity) {
         
-        for (int i = 0; i < NON_CONTROLLED_SIGNALS.size(); i++) {
-            if (NON_CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix) && NON_CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity)) {
-                return NON_CONTROLLED_SIGNALS.get(i).getCurrentAspect();
+        for (int i = 0; i < AUTOMATIC_SIGNALS.size(); i++) {
+            if (AUTOMATIC_SIGNALS.get(i).getPrefix().equals(signalPrefix) && AUTOMATIC_SIGNALS.get(i).getIdentity().equals(signalIdentity)) {
+                return AUTOMATIC_SIGNALS.get(i).getCurrentAspect();
             }
         }
         
@@ -764,5 +775,13 @@ public class RemoteInterlocking {
         }
         
         return null;
+    }
+    
+    public static ArrayList getControlledSignalsList () {
+        return CONTROLLED_SIGNALS;
+    }
+    
+    public static ArrayList getAutomaticSignalsList() {
+        return AUTOMATIC_SIGNALS;
     }
 }

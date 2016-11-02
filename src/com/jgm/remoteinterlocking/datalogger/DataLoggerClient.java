@@ -1,6 +1,6 @@
 package com.jgm.remoteinterlocking.datalogger;
 
-import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.TerminalColour;
 import com.jgm.remoteinterlocking.RemoteInterlocking;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -52,7 +52,7 @@ public class DataLoggerClient extends Thread {
             this.conn = new Socket();
             this.conn.connect(sockAddress, 10000);
             this.sendToDataLogger(String.format("%s%s %s%s%s", 
-                    Colour.GREEN.getColour(), RemoteInterlocking.getOK(), Colour.BLUE.getColour(), this.conn.toString(), Colour.RESET.getColour()), true, true);
+                    TerminalColour.GREEN.getColour(), RemoteInterlocking.getOK(), TerminalColour.BLUE.getColour(), this.conn.toString(), TerminalColour.RESET.getColour()), true, true);
             this.connectionAttempts = 0;
             return true;
         }
@@ -121,7 +121,7 @@ public class DataLoggerClient extends Thread {
                 if (establishingConnection && this.connectionAttempts <= MAX_CON_ATTEMPTS) {
                     if (this.connectionAttempts >= 5) {
                         this.sendToDataLogger(String.format ("%sWARNING: No further connection attempts with the Data Logger shall be made.%s",
-                            Colour.RED.getColour(), Colour.RESET.getColour()),
+                            TerminalColour.RED.getColour(), TerminalColour.RESET.getColour()),
                             true, true);
                         this.establishingConnection = false;
                     } else if (this.connectToServer()) {
@@ -139,38 +139,38 @@ public class DataLoggerClient extends Thread {
                 try {
                     // Server has disconnected
                     this.sendToDataLogger(String.format ("%sWARNING: The DataLogger Server has severed the connection%s",
-                        Colour.RED.getColour(), Colour.RESET.getColour())
+                        TerminalColour.RED.getColour(), TerminalColour.RESET.getColour())
                         , true, true);
                 } catch (IOException | NullPointerException e) {
                     System.out.println(String.format ("%s%s%s",
-                        Colour.RED.getColour(), Arrays.toString(e.getStackTrace()), Colour.RESET.getColour())); 
+                        TerminalColour.RED.getColour(), Arrays.toString(e.getStackTrace()), TerminalColour.RESET.getColour())); 
                 }
                     try {
                         this.closeConnection();
                     } catch (NullPointerException e) {
                         System.out.println(String.format ("%s%s%s",
-                            Colour.RED.getColour(), Arrays.toString(e.getStackTrace()), Colour.RESET.getColour()));
+                            TerminalColour.RED.getColour(), Arrays.toString(e.getStackTrace()), TerminalColour.RESET.getColour()));
                     }
                     this.run();
             } catch (IOException e) {
                 try {
                     this.sendToDataLogger(String.format("%s%s%sWARNING: Cannot connect to the Data Logger (Connection Refused) [%s:%s]%s",
-                        Colour.RED.getColour(), RemoteInterlocking.getFailed(), RemoteInterlocking.NEW_LINE, this.dataLoggerIP, this.dataLoggerPort, Colour.RESET.getColour())
+                        TerminalColour.RED.getColour(), RemoteInterlocking.getFailed(), RemoteInterlocking.NEW_LINE, this.dataLoggerIP, this.dataLoggerPort, TerminalColour.RESET.getColour())
                         ,true,true);
                     this.closeConnection();
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException ex) {
                         System.out.println(String.format ("%s%s%s",
-                            Colour.RED.getColour(), Arrays.toString(ex.getStackTrace()), Colour.RESET.getColour()));
+                            TerminalColour.RED.getColour(), Arrays.toString(ex.getStackTrace()), TerminalColour.RESET.getColour()));
                     }
                     } catch (IOException | NullPointerException npe) {
                         System.out.println(String.format ("%s%s%s",
-                            Colour.RED.getColour(), Arrays.toString(npe.getStackTrace()), Colour.RESET.getColour()));
+                            TerminalColour.RED.getColour(), Arrays.toString(npe.getStackTrace()), TerminalColour.RESET.getColour()));
                     }
             } catch (NullPointerException e) {
                 System.out.println(String.format ("%s%s%s",
-                    Colour.RED.getColour(), Arrays.toString(e.getStackTrace()), Colour.RESET.getColour()));
+                    TerminalColour.RED.getColour(), Arrays.toString(e.getStackTrace()), TerminalColour.RESET.getColour()));
             }
         } while (this.connected | this.establishingConnection);
     }

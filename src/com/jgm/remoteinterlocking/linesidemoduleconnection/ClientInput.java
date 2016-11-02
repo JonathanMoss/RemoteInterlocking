@@ -1,6 +1,6 @@
 package com.jgm.remoteinterlocking.linesidemoduleconnection;
 
-import com.jgm.remoteinterlocking.Colour;
+import com.jgm.remoteinterlocking.TerminalColour;
 import static com.jgm.remoteinterlocking.RemoteInterlocking.sendStatusMessage;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class ClientInput extends DataInputStream implements Runnable {
             } catch (IOException ex) { // There has been a problem
                 // Display a message to the console and DataLogger.
                 sendStatusMessage(String.format ("%sWARNING: The Remote Client [%s] has disconnected%s",
-                    Colour.RED.getColour(), ListenForRequests.getClientIdentity(this.clientOutput), Colour.RESET.getColour()),
+                    TerminalColour.RED.getColour(), ListenForRequests.getClientIdentity(this.clientOutput), TerminalColour.RESET.getColour()),
                     true, true);
                 // Destroy this object by setting its connected flag to 'false'.
                 this.connected = false;

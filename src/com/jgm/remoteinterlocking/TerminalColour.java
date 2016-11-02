@@ -1,10 +1,10 @@
 package com.jgm.remoteinterlocking;
 
 /**
- * This enum provides the ANSI Colour Codes, used to present colour output in the console.
+ * This enum provides the ANSI TerminalColour Codes, used to present colour output in the console.
  * @author Jonathan Moss
  */
-public enum Colour {
+public enum TerminalColour {
     
     BLACK("\u001B[30m"),
     RED("\u001B[31m"),
@@ -18,7 +18,7 @@ public enum Colour {
     
     private final String uniCode;
     
-    Colour (String uniCode) {
+    TerminalColour (String uniCode) {
         this.uniCode = uniCode;
         
     }
