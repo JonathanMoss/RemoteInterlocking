@@ -65,7 +65,7 @@ public abstract class MessageHandler {
                                     Colour.BLUE.getColour(), msgBody[1], msgBody[2], getControlledSignalAspect(msgBody[1], msgBody[2]), Colour.RESET.getColour()),
                                     true, true);  
                                 
-                            } else if (Arrays.toString(msgBody).contains("AUTOMATIC_SIGNALS")) {
+                            } else if (Arrays.toString(msgBody).contains("AUTOMATIC_SIGNAL")) {
                                 // Example: AUTOMATIC_SIGNAL.CE.105.RED
                                 updateNonControlledSignalAspect(msgBody[1], msgBody[2], Aspects.valueOf(msgBody[3]));
                                 sendStatusMessage(String.format ("Non-Controlled Signal Status Update: %s[Signal: %s%s, Aspect: %s]%s",
