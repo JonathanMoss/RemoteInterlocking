@@ -438,7 +438,6 @@ public class RemoteInterlocking {
        for (int i = 0; i < CONTROLLED_SIGNALS.size(); i++) {
             if (CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
                 CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
-                TechniciansUserInterface.updateSignalAspect(CONTROLLED_SIGNALS.get(i));
                 break;
             }
         }
@@ -458,6 +457,7 @@ public class RemoteInterlocking {
     
     /**
      * This method is used to update the status of a particular Non-Controlled Signal
+     * @param signalPrefix
      * @param signalIdentity <code>String</code> containing the Identity of Non-Controlled Signal.
      * @param aspect <code>Aspects</code> containing the current aspect of the Non-Controlled Signal.
      */
@@ -465,6 +465,7 @@ public class RemoteInterlocking {
        for (int i = 0; i < AUTOMATIC_SIGNALS.size(); i++) {
             if (AUTOMATIC_SIGNALS.get(i).getIdentity().equals(signalIdentity) && AUTOMATIC_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
                 AUTOMATIC_SIGNALS.get(i).setCurrentAspect(aspect);
+                TechniciansUserInterface.updateSignalAspect(AUTOMATIC_SIGNALS.get(i));
                 break;
             }
         }

@@ -10,16 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javafx.application.Application;
-import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.RowConstraints;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -33,13 +32,23 @@ public class TechniciansUserInterface extends Application implements Runnable{
 
     private static ArrayList <ControlledSignal> CON_SIG  = new ArrayList<>();
     private static ArrayList <AutomaticSignal> AUT_SIG = new ArrayList<>();
-    private static Map <Object, Integer> ASSET_MAP = new HashMap<>();
-    private static Map <Integer, Label> ASPECT_MAP = new HashMap<>();
-    private static GridPane sigGrid = new GridPane();
+    private static final Map <Object, Integer> ASSET_MAP = new HashMap<>();
+    private static final Map <Integer, Label> ASPECT_MAP = new HashMap<>();
+    private static final GridPane SIG_GRID = new GridPane();
+    private ContextMenu AutoSignalMenu;
+    private MenuItem AutoSignalMenu_Replace;
+    private MenuItem AutoSignalMenu_Restore;
     
     @Override
     public void start(Stage primaryStage) throws Exception {
         
+        //Build Automatic Signal Menu.
+        AutoSignalMenu = new ContextMenu();
+        AutoSignalMenu_Replace = new MenuItem();
+        AutoSignalMenu_Replace.setText("Replace Signal to most restrictive aspect");
+        AutoSignalMenu_Restore = new MenuItem();
+        AutoSignalMenu_Restore.setText("Restore signal to automatic working");
+        AutoSignalMenu.getItems().addAll(AutoSignalMenu_Replace, AutoSignalMenu_Restore);
         primaryStage.setTitle("Technicians User Interface");
         primaryStage.setOnCloseRequest(e-> {
             
@@ -65,43 +74,42 @@ public class TechniciansUserInterface extends Application implements Runnable{
             ASSET_MAP.put(AUT_SIG.get(i), (i + currentSize));
         }
         
-        RowConstraints rowConst = new RowConstraints(25);
-        
-        sigGrid.setHgap(1);
-        sigGrid.setVgap(1);
-        sigGrid.setPadding(new Insets(5,10,0,10));
+        SIG_GRID.setHgap(1);
+        SIG_GRID.setVgap(1);
+        SIG_GRID.setPadding(new Insets(5,10,0,10));
         
         ASSET_MAP.forEach((key, value) -> {
             
             if (key instanceof ControlledSignal) {
-                sigGrid.add(new Label(((ControlledSignal) key).getPrefix()), 1, value);
-                sigGrid.add(new Label(((ControlledSignal) key).getIdentity()), 2, value);
+                SIG_GRID.add(new Label(((ControlledSignal) key).getPrefix()), 1, value);
+                SIG_GRID.add(new Label(((ControlledSignal) key).getIdentity()), 2, value);
                 
                 Label temp = new Label();
                 getAspectSymbol(temp, ((ControlledSignal) key).getCurrentAspect());
                 ASPECT_MAP.put(value, temp);
 
-                sigGrid.add(ASPECT_MAP.get(value), 3, value);
+                SIG_GRID.add(ASPECT_MAP.get(value), 3, value);
                 
             } else {
                 
-                sigGrid.add(new Label(((AutomaticSignal) key).getPrefix()), 1, value);
-                sigGrid.add(new Label(((AutomaticSignal) key).getIdentity()), 2, value);
+                SIG_GRID.add(new Label(((AutomaticSignal) key).getPrefix()), 1, value);
+                SIG_GRID.add(new Label(((AutomaticSignal) key).getIdentity()), 2, value);
                 
                 Label temp = new Label();
                 temp.setOnMouseClicked(e->{
                     
-                   if (e.isPrimaryButtonDown())  {
+                   if (e.isAltDown())  {
                        
-                       MessageHandler.outGoingMessage(String.format ("%s.%s.true",
+                       MessageHandler.outGoingMessage(String.format ("AUTOMATIC_SIGNAL.%s.%s.false",
                             ((AutomaticSignal) key).getPrefix(),
                             ((AutomaticSignal) key).getIdentity()), 
                             MessageType.REQUEST, 
                             ((AutomaticSignal) key).getLineSideModuleIdentity());
+                            AutoSignalMenu.show(primaryStage, e.getScreenX(), e.getScreenY());
                        
                    } else {
                        
-                       MessageHandler.outGoingMessage(String.format ("%s.%s.true",
+                       MessageHandler.outGoingMessage(String.format ("AUTOMATIC_SIGNAL.%s.%s.true",
                             ((AutomaticSignal) key).getPrefix(),
                             ((AutomaticSignal) key).getIdentity()), 
                             MessageType.REQUEST, 
@@ -114,13 +122,13 @@ public class TechniciansUserInterface extends Application implements Runnable{
                 getAspectSymbol(temp, ((AutomaticSignal) key).getCurrentAspect());
                 ASPECT_MAP.put(value, temp);
                 
-                sigGrid.add(ASPECT_MAP.get(value), 3, value);
+                SIG_GRID.add(ASPECT_MAP.get(value), 3, value);
             }
         
         });
         
         ScrollPane scroll = new ScrollPane();
-        scroll.setContent(sigGrid);
+        scroll.setContent(SIG_GRID);
         tab[0].setContent(scroll);
         Scene scene = new Scene (tabPane, 1024, 768);
         primaryStage.setScene(scene);
@@ -130,13 +138,21 @@ public class TechniciansUserInterface extends Application implements Runnable{
     
     public synchronized static void updateSignalAspect (Object signal) {
         
+
         if (signal instanceof ControlledSignal) {
             ASSET_MAP.forEach((k,v)->{
             if (k.equals(signal)) {
                 getAspectSymbol(ASPECT_MAP.get(v), ((ControlledSignal) signal).getCurrentAspect());
             }
         
-        });
+            });
+        } else {
+            ASSET_MAP.forEach((k,v)->{
+            if (k.equals(signal)) {
+                getAspectSymbol(ASPECT_MAP.get(v), ((AutomaticSignal) signal).getCurrentAspect());
+            }
+        
+            });
         }
         
         
@@ -150,7 +166,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
             
             aspectLabel.setText(String.format("%s", "\u25ce"));
             
-        }
+        } else {
         
         switch (signalAspect) {
             case SUB_OFF: //2687
@@ -203,7 +219,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                 break;
                 
         }
-        
+        }
     }
 
     @Override
