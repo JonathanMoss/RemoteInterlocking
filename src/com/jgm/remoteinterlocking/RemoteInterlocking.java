@@ -438,6 +438,7 @@ public class RemoteInterlocking {
        for (int i = 0; i < CONTROLLED_SIGNALS.size(); i++) {
             if (CONTROLLED_SIGNALS.get(i).getIdentity().equals(signalIdentity) && CONTROLLED_SIGNALS.get(i).getPrefix().equals(signalPrefix)) {
                 CONTROLLED_SIGNALS.get(i).setCurrentAspect(aspect);
+                TechniciansUserInterface.updateSignalAspect(CONTROLLED_SIGNALS.get(i));
                 break;
             }
         }

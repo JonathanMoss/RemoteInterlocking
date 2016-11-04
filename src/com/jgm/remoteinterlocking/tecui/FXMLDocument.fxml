@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.shape.Circle?>
+
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
+  <tabs>
+    <Tab text="Signals">
+      <content>
+        <AnchorPane>
+               <children>
+                  <ImageView fitHeight="768.0" fitWidth="1024.0" preserveRatio="true">
+                     <image>
+                        <Image url="@Alsager%20Layout.png" />
+                     </image>
+                  </ImageView>
+                  <AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1023.0">
+                     <children>
+                        <Circle fx:id="CE175" fill="RED" layoutX="238.0" layoutY="47.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE178" fill="#fa0000" layoutX="448.0" layoutY="169.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE176" fill="#fa0000" layoutX="448.0" layoutY="211.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE179" fill="#fa0000" layoutX="766.0" layoutY="169.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE183" fill="#fa0000" layoutX="935.0" layoutY="47.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE181" fill="#fa0000" layoutX="935.0" layoutY="97.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE184" fill="#fa0000" layoutX="238.0" layoutY="382.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE185" fill="#fa0000" layoutX="350.0" layoutY="299.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE189" fill="#fa0000" layoutX="736.0" layoutY="299.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE186" fill="#fa0000" layoutX="628.0" layoutY="382.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE190" fill="#fa0000" layoutX="915.0" layoutY="382.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE190CA" fill="#fa0000" layoutX="915.0" layoutY="348.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE190R" fill="#fa0000" layoutX="130.0" layoutY="568.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE192" fill="#fa0000" layoutX="370.0" layoutY="568.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE191" fill="#fa0000" layoutX="238.0" layoutY="536.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE193" fill="#fa0000" layoutX="512.0" layoutY="536.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE196" fill="#fa0000" layoutX="628.0" layoutY="518.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE198" fill="#fa0000" layoutX="628.0" layoutY="568.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE119" fill="#979797" layoutX="905.0" layoutY="486.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE121" fill="#969696" layoutX="905.0" layoutY="536.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="SOT473" fill="#969696" layoutX="53.0" layoutY="47.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="SOT474R" fill="#969696" layoutX="143.0" layoutY="129.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="SOT474" fill="#969696" layoutX="53.0" layoutY="129.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE521" fill="#fa0000" layoutX="267.0" layoutY="101.0" radius="6.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CE524" fill="#fa0000" layoutX="858.0" layoutY="124.0" radius="6.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Circle fx:id="CEBS1" fill="#fa0000" layoutX="638.0" layoutY="194.0" radius="6.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Label layoutX="221.0" layoutY="14.0" text="CE175" />
+                        <Label layoutX="918.0" layoutY="14.0" text="CE183" />
+                        <Label layoutX="918.0" layoutY="121.0" text="CE181" />
+                        <Label layoutX="749.0" layoutY="186.0" text="CE179" />
+                        <Label layoutX="485.0" layoutY="161.0" text="CE178" />
+                        <Label layoutX="485.0" layoutY="203.0" text="CE176" />
+                        <Label layoutX="333.0" layoutY="263.0" text="CE185" />
+                        <Label layoutX="719.0" layoutY="263.0" text="CE189" />
+                        <Label layoutX="221.0" layoutY="402.0" text="CE184" />
+                        <Label layoutX="611.0" layoutY="402.0" text="CE186" />
+                        <Label layoutX="898.0" layoutY="402.0" text="CE190" />
+                        <Label layoutX="898.0" layoutY="309.0" text="CE190CA" />
+                        <Label layoutX="221.0" layoutY="500.0" text="CE191" />
+                        <Label layoutX="113.0" layoutY="589.0" text="CE190R" />
+                        <Label layoutX="353.0" layoutY="589.0" text="CE192" />
+                        <Label layoutX="495.0" layoutY="500.0" text="CE193" />
+                        <Label layoutX="611.0" layoutY="589.0" text="CE198" />
+                        <Label layoutX="674.0" layoutY="510.0" text="CE196" />
+                        <Label layoutX="928.0" layoutY="478.0" text="CE119" />
+                        <Label layoutX="928.0" layoutY="528.0" text="CE121" />
+                        <Label layoutX="36.0" layoutY="14.0" text="SOT473" />
+                        <Label layoutX="36.0" layoutY="151.0" text="SOT474" />
+                        <Label layoutX="221.0" layoutY="79.0" text="CE521" />
+                        <Label layoutX="841.0" layoutY="143.0" text="CE524" />
+                        <Label layoutX="126.0" layoutY="151.0" text="SOT474R" />
+                        <Circle fx:id="CER184" fill="#fa0000" layoutX="413.0" layoutY="382.0" radius="10.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" strokeWidth="2.0" />
+                        <Label layoutX="396.0" layoutY="402.0" text="CER184" />
+                        <ComboBox fx:id="CE175_RouteSelect" layoutX="265.0" layoutY="18.0" prefWidth="150.0" promptText="Select Signal" />
+                        <ComboBox fx:id="CE193_RouteSelect" layoutX="437.0" layoutY="465.0" prefWidth="150.0" promptText="Select Signal" />
+                        <ComboBox fx:id="CE521_RouteSelect" layoutX="190.0" layoutY="125.0" prefWidth="150.0" promptText="Select Signal" />
+                        <ComboBox fx:id="CE524_RouteSelect" layoutX="808.0" layoutY="165.0" prefWidth="150.0" promptText="Select Signal" />
+                        <ComboBox fx:id="CE184_RouteSelect" layoutX="165.0" layoutY="419.0" prefWidth="150.0" promptText="Select Signal" />
+                     </children>
+                  </AnchorPane>
+               </children></AnchorPane>
+      </content>
+    </Tab>
+  </tabs>
+</TabPane>
