@@ -32,9 +32,10 @@ public abstract class MessageHandler {
     
     private static volatile ArrayList <Message> msgStack = new ArrayList<>(); // A Stack of Message Objects that are processed by the MessageProcess Thread.
     private static final String MESSAGE_END = "MESSAGE_END"; // Constant definition for the Message Ending.
+    private static String msgBody[];
     
     public synchronized static void processMessageStack() {
-        
+
         while (msgStack.size() > 0) {
             switch (msgStack.get(0).getMsgDirection()) {
                 case OUTGOING:
@@ -49,7 +50,7 @@ public abstract class MessageHandler {
                             break;
                         case STATE_CHANGE:
                             
-                            String msgBody[] = msgStack.get(0).getMsgBody().split("\\.");
+                            msgBody = msgStack.get(0).getMsgBody().split("\\.");
                              
                             if (Arrays.toString(msgBody).contains("POINTS")) {
                                 // Example: POINTS.994.NORMAL.TRUE   
@@ -83,6 +84,15 @@ public abstract class MessageHandler {
 
                             break;
                        
+                        case TECHNICIAN:
+                            
+                            msgBody = msgStack.get(0).getMsgBody().split("\\.");
+                            switch (msgBody[0]) {
+                                case "LAMP_FAILED":
+                                case "LAMP_OK":
+                            }
+                            
+                            break;
                         }
                     break;
                 }

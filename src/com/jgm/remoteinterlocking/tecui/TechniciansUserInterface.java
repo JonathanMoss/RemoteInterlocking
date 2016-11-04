@@ -162,7 +162,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
             String selection;
             switch (fullIdentity) {
                 case "CE175": // ->183, 181, 179, Siding
-                    selection = CE175_RouteSelect.getValue().toString();
+                    selection = (String) CE175_RouteSelect.getValue();
                     if (selection != null) {
                         switch (selection) {
                             case "CE183":
@@ -178,7 +178,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                                 MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                                 break;
                             case "Siding":
-                                msg = "CONTROLLED_SIGNAL.CE.175.CE.BS1.MAIN.null";
+                                msg = "CONTROLLED_SIGNAL.CE.175.CE.BS1.SHUNT.null";
                                 MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                                 break;
                         }
@@ -197,7 +197,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                     MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                     break;
                 case "CE193": // ->119, 121
-                    selection = CE193_RouteSelect.getValue().toString();
+                    selection = (String) CE193_RouteSelect.getValue();
                     if (selection != null) {
                         switch (selection) {
                             case "CE119":
@@ -228,7 +228,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                     MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                     break;
                 case "CE184": // ->SOT474, CE178
-                    selection = CE184_RouteSelect.getValue().toString();
+                    selection = (String) CE184_RouteSelect.getValue();
                     if (selection != null) {
                         switch (selection) {
                             case "SOT474":
@@ -255,7 +255,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                     MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                     break;
                 case "CE521": // ->181, 179, Siding
-                    selection = CE521_RouteSelect.getValue().toString();
+                    selection = (String) CE521_RouteSelect.getValue();
                     if (selection != null) {
                         switch (selection) {
                             case "CE181":
@@ -266,22 +266,28 @@ public class TechniciansUserInterface extends Application implements Runnable{
                                 msg = "CONTROLLED_SIGNAL.CE.521.CE.179.SHUNT.null";
                                 MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                                 break;
+                            case "Siding":
+                                msg = "CONTROLLED_SIGNAL.CE.521.CE.BS1.SHUNT.null";
+                                MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
+                                break;
                         }
                     }
+                    break;
                 case "CE524": // ->SOT474, CE178
-                    selection = CE524_RouteSelect.getValue().toString();
+                    selection = (String) CE524_RouteSelect.getValue();
                     if (selection != null) {
                         switch (selection) {
-                            case "CE181":
+                            case "CE178":
                                 msg = "CONTROLLED_SIGNAL.CE.524.SOT.474.SHUNT.null";
                                 MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                                 break;
-                            case "CE179":
+                            case "SOT474":
                                 msg = "CONTROLLED_SIGNAL.CE.524.CE.178.SHUNT.null";
                                 MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
                                 break;
                         }
                     }
+                    break;
                 case "CE181": // ->185
                     msg = "CONTROLLED_SIGNAL.CE.181.CE.185.MAIN.null";
                     MessageHandler.outGoingMessage(msg, MessageType.REQUEST, remoteClient);
