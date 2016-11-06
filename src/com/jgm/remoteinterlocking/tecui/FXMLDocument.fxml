@@ -80,6 +80,16 @@
                         <ComboBox fx:id="CE521_RouteSelect" layoutX="190.0" layoutY="125.0" prefWidth="150.0" promptText="Select Signal" />
                         <ComboBox fx:id="CE524_RouteSelect" layoutX="808.0" layoutY="165.0" prefWidth="150.0" promptText="Select Signal" />
                         <ComboBox fx:id="CE184_RouteSelect" layoutX="165.0" layoutY="419.0" prefWidth="150.0" promptText="Select Signal" />
+                        <ImageView fitHeight="25.0" fitWidth="30.0" layoutX="400.0" layoutY="585.0">
+                           <image>
+                              <Image url="@9_25.gif" />
+                           </image>
+                        </ImageView>
+                        <ImageView fitHeight="25.0" fitWidth="30.0" layoutX="186.0" layoutY="496.0">
+                           <image>
+                              <Image url="@9_25.gif" />
+                           </image>
+                        </ImageView>
                      </children>
                   </AnchorPane>
                </children></AnchorPane>
