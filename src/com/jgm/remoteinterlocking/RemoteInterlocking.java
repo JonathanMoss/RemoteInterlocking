@@ -785,4 +785,8 @@ public class RemoteInterlocking {
     public static ArrayList getAutomaticSignalsList() {
         return AUTOMATIC_SIGNALS;
     }
+    
+    public static ArrayList <Points> getPointsArray() {
+        return POINTS;
+    }
 }

@@ -2,12 +2,16 @@
 
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
 <TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
@@ -95,26 +99,142 @@
                   </AnchorPane>
                   <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0">
                      <children>
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="26.0" layoutY="172.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
                         <Label layoutX="285.0" layoutY="64.0" text="934B">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label layoutX="318.0" layoutY="95.0" text="934A">
+                        <Label layoutX="317.0" layoutY="97.0" text="934A">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label layoutX="365.0" layoutY="117.0" text="935B">
+                        <Label layoutX="360.0" layoutY="114.0" text="935B">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label layoutX="350.0" layoutY="157.0" text="936B">
+                        <Label layoutX="352.0" layoutY="153.0" text="936B">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
+                        <Label layoutX="408.0" layoutY="136.0" text="935A">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="377.0" layoutY="178.0" text="936A">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="767.0" layoutY="136.0" text="937B">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="790.0" layoutY="113.0" text="937A">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="132.0" layoutY="316.0" text="938A">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="148.0" layoutY="349.0" text="938B">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="576.0" layoutY="537.0" text="994">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <Label layoutX="786.0" layoutY="350.0" text="940">
+                           <font>
+                              <Font size="12.0" />
+                           </font>
+                        </Label>
+                        <RadioButton fx:id="normal934" contentDisplay="TOP" graphicTextGap="2.0" layoutX="32.0" layoutY="206.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points934" />
+                           </toggleGroup></RadioButton>
+                        <RadioButton fx:id="centre934" layoutX="73.0" layoutY="197.0" mnemonicParsing="false" toggleGroup="$points934" />
+                        <RadioButton fx:id="reverse934" layoutX="98.0" layoutY="206.0" mnemonicParsing="false" text="R" toggleGroup="$points934" />
+                        <Label layoutX="69.0" layoutY="177.0" text="934" />
+                        <Circle fx:id="switch934" layoutX="82.0" layoutY="245.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line934" layoutX="82.0" layoutY="230.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="148.0" layoutY="172.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal935" contentDisplay="TOP" graphicTextGap="2.0" layoutX="154.0" layoutY="206.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points935" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre935" layoutX="195.0" layoutY="197.0" mnemonicParsing="false" toggleGroup="$points935" />
+                        <RadioButton fx:id="reverse935" layoutX="220.0" layoutY="206.0" mnemonicParsing="false" text="R" toggleGroup="$points935" />
+                        <Label layoutX="191.0" layoutY="177.0" text="935" />
+                        <Circle fx:id="switch935" layoutX="204.0" layoutY="245.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line935" layoutX="204.0" layoutY="230.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="521.0" layoutY="610.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal994" contentDisplay="TOP" graphicTextGap="2.0" layoutX="527.0" layoutY="644.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points994" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre994" layoutX="568.0" layoutY="635.0" mnemonicParsing="false" toggleGroup="$points994" />
+                        <RadioButton fx:id="reverse994" layoutX="593.0" layoutY="644.0" mnemonicParsing="false" text="R" toggleGroup="$points994" />
+                        <Label layoutX="564.0" layoutY="615.0" text="994" />
+                        <Circle fx:id="switch994" layoutX="577.0" layoutY="683.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line994" layoutX="577.0" layoutY="668.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="766.0" layoutY="375.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal940" contentDisplay="TOP" graphicTextGap="2.0" layoutX="772.0" layoutY="409.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points940" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre940" layoutX="813.0" layoutY="400.0" mnemonicParsing="false" toggleGroup="$points940" />
+                        <RadioButton fx:id="reverse940" layoutX="838.0" layoutY="409.0" mnemonicParsing="false" text="R" toggleGroup="$points940" />
+                        <Label layoutX="809.0" layoutY="380.0" text="940" />
+                        <Circle fx:id="switch940" layoutX="822.0" layoutY="448.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line940" layoutX="822.0" layoutY="433.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="770.0" layoutY="206.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal937" contentDisplay="TOP" graphicTextGap="2.0" layoutX="776.0" layoutY="240.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points937" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre937" layoutX="817.0" layoutY="231.0" mnemonicParsing="false" toggleGroup="$points937" />
+                        <RadioButton fx:id="reverse937" layoutX="842.0" layoutY="240.0" mnemonicParsing="false" text="R" toggleGroup="$points937" />
+                        <Label layoutX="813.0" layoutY="211.0" text="937" />
+                        <Circle fx:id="switch937" layoutX="826.0" layoutY="279.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line937" layoutX="826.0" layoutY="264.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="537.0" layoutY="206.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal936" contentDisplay="TOP" graphicTextGap="2.0" layoutX="543.0" layoutY="240.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points936" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre936" layoutX="584.0" layoutY="231.0" mnemonicParsing="false" toggleGroup="$points936" />
+                        <RadioButton fx:id="reverse936" layoutX="609.0" layoutY="240.0" mnemonicParsing="false" text="R" toggleGroup="$points936" />
+                        <Label layoutX="580.0" layoutY="211.0" text="936" />
+                        <Circle fx:id="switch936" layoutX="593.0" layoutY="279.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line936" layoutX="593.0" layoutY="264.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
+                        <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#1f93ff00" height="102.0" layoutX="25.0" layoutY="375.0" stroke="BLACK" strokeLineCap="ROUND" strokeLineJoin="ROUND" strokeType="INSIDE" width="111.0" />
+                        <RadioButton fx:id="normal938" contentDisplay="TOP" graphicTextGap="2.0" layoutX="31.0" layoutY="409.0" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" prefHeight="14.0" prefWidth="28.0" selected="true" text="N">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="points938" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="centre938" layoutX="72.0" layoutY="400.0" mnemonicParsing="false" toggleGroup="$points938" />
+                        <RadioButton fx:id="reverse938" layoutX="97.0" layoutY="409.0" mnemonicParsing="false" text="R" toggleGroup="$points938" />
+                        <Label layoutX="68.0" layoutY="380.0" text="938" />
+                        <Circle fx:id="switch938" layoutX="81.0" layoutY="448.0" radius="21.0" stroke="BLACK" strokeType="INSIDE" />
+                        <Line fx:id="line938" layoutX="81.0" layoutY="433.0" startY="30.0" stroke="WHITE" strokeWidth="3.0" />
                      </children>
                   </AnchorPane>
                </children></AnchorPane>

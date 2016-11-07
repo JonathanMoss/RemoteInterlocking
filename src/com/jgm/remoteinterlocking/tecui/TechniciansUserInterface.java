@@ -4,11 +4,13 @@ import com.jgm.remoteinterlocking.RemoteInterlocking;
 import com.jgm.remoteinterlocking.assets.Aspects;
 import com.jgm.remoteinterlocking.assets.AutomaticSignal;
 import com.jgm.remoteinterlocking.assets.ControlledSignal;
+import com.jgm.remoteinterlocking.assets.Points;
 import com.jgm.remoteinterlocking.assets.SignalLamps;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,10 +23,12 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioButton;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
 /**
@@ -32,8 +36,10 @@ import javafx.stage.Stage;
  * @author Jonathan Moss
  * @version v1.0 November 2016
  */
-public class TechniciansUserInterface extends Application implements Runnable{
+public class TechniciansUserInterface extends Application implements Runnable {
 
+    private static final ArrayList <IndividualPointSwitch> ips = new ArrayList<>();
+    
     /**
      * A Map that contains all the Automatic controlledSignal objects, and associated GUI Circle Objects.
      */
@@ -93,11 +99,6 @@ public class TechniciansUserInterface extends Application implements Runnable{
      * The menu option for replacing a Controlled Signal to danger.
      */
     private static final MenuItem CONT_REPLACE_SIGNAL = new MenuItem ("Replace Signal to Danger");
-    
-    /**
-     * The menu items for clearing to a restricted aspect.
-     */
-    private static final MenuItem[] CONT_RESTRICTED_ASPECTS = {new MenuItem("Yellow"), new MenuItem("Double Yellow")};
     
     /**
      * The Lamp Proving menu for a Controlled Signal.
@@ -228,11 +229,8 @@ public class TechniciansUserInterface extends Application implements Runnable{
                         CONT_MENU.show(stage, e.getScreenX(), e.getScreenY());
                     }
                     
-                    
                 });
-                
-                
-                
+
             } else {
                 
                 System.out.println(String.format ("Cant find the circle! [%s%s]", controlledSignals.get(i).getPrefix(), controlledSignals.get(i).getIdentity()));
@@ -240,6 +238,45 @@ public class TechniciansUserInterface extends Application implements Runnable{
             }
 
         }
+        
+        ArrayList <Points> pointsArray = RemoteInterlocking.getPointsArray();
+        ArrayList <Points> tempArray = new ArrayList<>();
+        ArrayList <Integer> ignore = new ArrayList<>();
+        
+        for (int i = 0; i < pointsArray.size(); i++) {
+        
+            if (!ignore.contains(i)) {
+           
+                String strippedIdentity = pointsArray.get(i).getPointsIdentity();
+                strippedIdentity = strippedIdentity.replaceAll("[^\\d.]", "");
+           
+                if (!tempArray.contains(pointsArray.get(i))) {
+                    tempArray.add(pointsArray.get(i));
+                    for (int x = (i + 1); x < pointsArray.size(); x++) {
+                        String stripped = pointsArray.get(x).getPointsIdentity();
+                        stripped = stripped.replaceAll("[^\\d.]", "");
+                        if (stripped.equals(strippedIdentity)) {
+                            ignore.add(x);
+                            tempArray.add(pointsArray.get(x));
+                        }
+                    }
+                }
+           
+                String lookupLine = String.format ("#line%s", strippedIdentity);
+                String lookupSwitch = String.format ("#switch%s", strippedIdentity);
+                String radioNormal = String.format ("#normal%s", strippedIdentity);
+                String radioCentre = String.format ("#centre%s", strippedIdentity);
+                String radioReverse = String.format ("#reverse%s", strippedIdentity);
+                
+                RadioButton[] pointIndication = {(RadioButton) scene.lookup(radioNormal), (RadioButton) scene.lookup(radioCentre), (RadioButton) scene.lookup (radioReverse)};
+                ips.add(new IndividualPointSwitch (tempArray, (Circle) scene.lookup (lookupSwitch), (Line) scene.lookup (lookupLine), pointIndication));
+                
+            }
+           
+           tempArray.clear();
+           
+        }
+
     }
     
     private void showControlledSignalMenu (String prefix, String identity, String remoteClient, ControlledSignal contSig) {
