@@ -4,11 +4,13 @@ import com.jgm.remoteinterlocking.RemoteInterlocking;
 import com.jgm.remoteinterlocking.assets.Aspects;
 import com.jgm.remoteinterlocking.assets.AutomaticSignal;
 import com.jgm.remoteinterlocking.assets.ControlledSignal;
+import com.jgm.remoteinterlocking.assets.SignalLamps;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageHandler;
 import com.jgm.remoteinterlocking.linesidemoduleconnection.MessageType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -19,7 +21,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -27,33 +28,90 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 /**
- *
+ * This class provides a technicians interface to the Interlocking.
  * @author Jonathan Moss
- * @version v1.0 October 2016
+ * @version v1.0 November 2016
  */
 public class TechniciansUserInterface extends Application implements Runnable{
 
+    /**
+     * A Map that contains all the Automatic controlledSignal objects, and associated GUI Circle Objects.
+     */
     private static final HashMap <AutomaticSignal, Circle> AUT_SIG = new HashMap<>();
+    
+    /**
+     * A Map that contains all the Controlled controlledSignal objects, and associated GUI Circle Objects.
+     */
     private static final HashMap <ControlledSignal, Circle> CON_SIG = new HashMap<>();
+    
+    /**
+     * The top level JavaFX Container.
+     */
     private static Stage stage;
+    
+    /**
+     * The screen container object.
+     */
     private static Scene scene;
     
-    // Automatic Signal Menu Items
+    /**
+     * The context (top level) menu for an Automatic Signal.
+     */
     private static final ContextMenu AUTO_MENU = new ContextMenu();
+    
+    /**
+     * The menu item for replacing an automatic controlledSignal to its most restrictive aspect.
+     */
     private static final MenuItem AUTO_MENU_REPLACE = new MenuItem ("Operate Signal Replacement");
+    
+    /**
+     * The menu item for restoring an automatic controlledSignal replacement.
+     */
     private static final MenuItem AUTO_MENU_RESTORE = new MenuItem ("Restore Signal Replacement");
     
-    // Controlled Signal Menu Items
+    /**
+     * The Lamp Proving menu item for an automatic controlledSignal.
+     */
+    private static final Menu AUTO_LAMP_PROVING = new Menu("Lamp Proving");
+    
+    /**
+     * An array list that contains the lamp aspects for automatic signals.
+     */
+    private static final ArrayList <CheckMenuItem> AUTO_SIGNAL_LAMPS = new ArrayList<>();
+    
+    /**
+     * The context (top level) menu for a Controlled Signal.
+     */
     private static final ContextMenu CONT_MENU = new ContextMenu();
+    
+    /**
+     * The menu option for clearing a Controlled Signal.
+     */
     private static final MenuItem CONT_CLEAR_SIGNAL = new MenuItem ("Clear Signal");
+    
+    /**
+     * The menu option for replacing a Controlled Signal to danger.
+     */
     private static final MenuItem CONT_REPLACE_SIGNAL = new MenuItem ("Replace Signal to Danger");
-    private static final Menu CONT_RESTRICT_ASPECT = new Menu("Clear with Restricted Aspect");
+    
+    /**
+     * The menu items for clearing to a restricted aspect.
+     */
     private static final MenuItem[] CONT_RESTRICTED_ASPECTS = {new MenuItem("Yellow"), new MenuItem("Double Yellow")};
     
-    // All Menu Items
-    private static final Menu ALL_SUB = new Menu("Lamp Proving");
-    private static final CheckMenuItem[] ALL_LAMP_PROVING = {new CheckMenuItem ("Red"), new CheckMenuItem ("Bottom Yellow"), new CheckMenuItem ("Top Yellow"), new CheckMenuItem ("Green"),};
-
+    /**
+     * The Lamp Proving menu for a Controlled Signal.
+     */
+    private static final Menu CONT_LAMP_PROVING = new Menu("Lamp Proving");
+    
+    /**
+     * An ArrayList that will contain the aspect lists for a Controlled Signal.
+     */
+    private static final ArrayList <CheckMenuItem> CONT_SIGNAL_LAMPS = new ArrayList<>();
+    
+    /**
+     * The ComboBox items for Selecting a Signalled Route.
+     */
     private static ComboBox CE175_RouteSelect;
     private static ComboBox CE184_RouteSelect;
     private static ComboBox CE193_RouteSelect;
@@ -63,20 +121,23 @@ public class TechniciansUserInterface extends Application implements Runnable{
     @Override
     public void start(Stage primaryStage) throws Exception {
 
+        // Setup and show the GUI.
         stage = primaryStage;
         Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
         scene = new Scene(root);
         stage.setScene(scene);
+        stage.setOnCloseRequest(e -> {
+        
+            System.exit(0);
+        
+        });
         stage.show();
         
-        // Build Menus
-        for (int i=0; i < ALL_LAMP_PROVING.length; i++) {
-            ALL_LAMP_PROVING[i].setSelected(true);
-        }
-        ALL_SUB.getItems().addAll(ALL_LAMP_PROVING);
-        AUTO_MENU.getItems().addAll(AUTO_MENU_REPLACE, AUTO_MENU_RESTORE, new SeparatorMenuItem(), ALL_SUB);
-        CONT_RESTRICT_ASPECT.getItems().addAll(CONT_RESTRICTED_ASPECTS);
-        CONT_MENU.getItems().addAll(CONT_CLEAR_SIGNAL, CONT_REPLACE_SIGNAL, new SeparatorMenuItem(), CONT_RESTRICT_ASPECT, new SeparatorMenuItem(), ALL_SUB);
+        // Add the relevant items to the Automatic Signal Menu
+        AUTO_MENU.getItems().addAll(AUTO_MENU_REPLACE, AUTO_MENU_RESTORE, AUTO_LAMP_PROVING);
+        
+        // Add the relevant items to the Controlled Signal Menu
+        CONT_MENU.getItems().addAll(CONT_CLEAR_SIGNAL, CONT_REPLACE_SIGNAL, CONT_LAMP_PROVING);
         
         //Populate Route Selects.
         CE175_RouteSelect = (ComboBox)scene.lookup("#CE175_RouteSelect");
@@ -96,26 +157,43 @@ public class TechniciansUserInterface extends Application implements Runnable{
         
         // Iterate through the Automatic Signals and build the hashmap.
         ArrayList <AutomaticSignal> automaticSignals = RemoteInterlocking.getAutomaticSignalsList();
+        
         for (int i = 0; i < automaticSignals.size(); i++) {
             
             String lookUp = String.format ("#%s%s", automaticSignals.get(i).getPrefix(), automaticSignals.get(i).getIdentity());
             Circle circle = (Circle) scene.lookup(lookUp);
+            
             if (circle != null) {
-                AUT_SIG.put(automaticSignals.get(i), circle);
-                updateSignalAspect(automaticSignals.get(i));
-                String prefix = automaticSignals.get(i).getPrefix();
-                String identity = automaticSignals.get(i).getIdentity();
-                String remoteClientID = automaticSignals.get(i).getLineSideModuleIdentity();
-                circle.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                AutomaticSignal automaticSignal = automaticSignals.get(i);
+                AUT_SIG.put(automaticSignal, circle);
+                updateSignalAspect(automaticSignal);
+                String prefix = automaticSignal.getPrefix();
+                String identity = automaticSignal.getIdentity();
+                String remoteClientID = automaticSignal.getLineSideModuleIdentity();
+                new SignalLamps(prefix, identity);
+                String msg = String.format ("GET_LAMPS_ALL.%s.%s", prefix, identity);
+                MessageHandler.outGoingMessage(msg, MessageType.TECHNICIAN, remoteClientID);
                 
+
+                
+                circle.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+
                     if (e.getButton() == MouseButton.SECONDARY) {
-                        showAutomaticSignalMenu(prefix, identity, remoteClientID);
+                        showAutomaticSignalMenu(prefix, identity, remoteClientID, automaticSignal);
+                        
+                        if (identity.matches(".*[a-zA-Z]+.*")) {
+                            
+                            AUTO_MENU_RESTORE.setVisible(false);
+                            AUTO_MENU_REPLACE.setVisible(false);
+                            
+                        }
+
                         AUTO_MENU.show(stage, e.getScreenX(), e.getScreenY());
                     }
-                    
-                    
+
                 });
                 
+
             } else {
                 
                 System.out.println(String.format ("Cant find the circle! [%s%s]", automaticSignals.get(i).getPrefix(), automaticSignals.get(i).getIdentity()));
@@ -126,25 +204,35 @@ public class TechniciansUserInterface extends Application implements Runnable{
         
         // Iterate through the Controlled Signals and build the hashmap.
         ArrayList <ControlledSignal> controlledSignals = RemoteInterlocking.getControlledSignalsList();
+        
         for (int i = 0; i < controlledSignals.size(); i++) {
             
             String lookUp = String.format ("#%s%s", controlledSignals.get(i).getPrefix(), controlledSignals.get(i).getIdentity());
             Circle circle = (Circle) scene.lookup(lookUp);
+            
             if (circle != null) {
-                CON_SIG.put(controlledSignals.get(i), circle);
-                updateSignalAspect(controlledSignals.get(i));
-                String prefix = controlledSignals.get(i).getPrefix();
-                String identity = controlledSignals.get(i).getIdentity();
-                String remoteClientID = controlledSignals.get(i).getLineSideModuleIdentity();
+                ControlledSignal controlledSignal = controlledSignals.get(i);
+                CON_SIG.put(controlledSignal, circle);
+                updateSignalAspect(controlledSignal);
+                String prefix = controlledSignal.getPrefix();
+                String identity = controlledSignal.getIdentity();
+                String remoteClientID = controlledSignal.getLineSideModuleIdentity();
+                new SignalLamps(prefix, identity);
+                String msg = String.format ("GET_LAMPS_ALL.%s.%s", prefix, identity);
+                MessageHandler.outGoingMessage(msg, MessageType.TECHNICIAN, remoteClientID);
+                
                 circle.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 
                     if (e.getButton() == MouseButton.SECONDARY) {
-                        showControlledSignalMenu(prefix, identity, remoteClientID);
+                        showControlledSignalMenu(prefix, identity, remoteClientID, controlledSignal);
                         CONT_MENU.show(stage, e.getScreenX(), e.getScreenY());
                     }
                     
                     
                 });
+                
+                
+                
             } else {
                 
                 System.out.println(String.format ("Cant find the circle! [%s%s]", controlledSignals.get(i).getPrefix(), controlledSignals.get(i).getIdentity()));
@@ -154,9 +242,28 @@ public class TechniciansUserInterface extends Application implements Runnable{
         }
     }
     
-    private void showControlledSignalMenu (String prefix, String identity, String remoteClient) {
+    private void showControlledSignalMenu (String prefix, String identity, String remoteClient, ControlledSignal contSig) {
     
-        CONT_CLEAR_SIGNAL.setOnAction(e -> {    
+        if (contSig.isSignalDisplayingMostRestrictiveAspect()) {
+                    
+            CONT_CLEAR_SIGNAL.setVisible(true);
+            CONT_REPLACE_SIGNAL.setVisible(false);
+                    
+        } else {
+                    
+            CONT_CLEAR_SIGNAL.setVisible(false);
+            CONT_REPLACE_SIGNAL.setVisible(true);
+                    
+        }
+        
+        // Build Lamp Proving Menu
+        CONT_SIGNAL_LAMPS.clear();
+        CONT_SIGNAL_LAMPS.addAll(buildLampMenu(prefix, identity, remoteClient));
+        CONT_LAMP_PROVING.getItems().clear();
+        CONT_LAMP_PROVING.getItems().addAll(CONT_SIGNAL_LAMPS);
+        
+        CONT_CLEAR_SIGNAL.setOnAction(e -> {   
+            
             String fullIdentity = String.format ("%s%s", prefix, identity);
             String msg;
             String selection;
@@ -183,6 +290,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
                                 break;
                         }
                     }
+                    
                     break;
                 case "CE183": // ->185
                     msg = "CONTROLLED_SIGNAL.CE.183.CE.185.MAIN.null";
@@ -306,7 +414,60 @@ public class TechniciansUserInterface extends Application implements Runnable{
         
     }
     
-    private void showAutomaticSignalMenu(String prefix, String identity, String remoteClient) {
+    private ArrayList <CheckMenuItem> buildLampMenu (String prefix, String identity, String remoteClient) {
+    
+        Map lampMap = SignalLamps.returnSignal(prefix, identity).getLampMap();
+        ArrayList <CheckMenuItem> lampList = new ArrayList<>();
+        
+        lampMap.forEach ((key, value) -> {
+        
+            CheckMenuItem menuItem = new CheckMenuItem (key.toString());
+            menuItem.setSelected((Boolean) value);
+            menuItem.setOnAction(e->{
+            
+                String message;
+                
+                if (menuItem.isSelected()) {
+                
+                    message = String.format ("RESTORE_LAMP.%s.%s.%s", key, prefix, identity);
+                    MessageHandler.outGoingMessage(message, MessageType.TECHNICIAN, remoteClient); 
+                    
+                } else {
+                    
+                    message = String.format ("FAIL_LAMP.%s.%s.%s", key, prefix, identity);
+                    MessageHandler.outGoingMessage(message, MessageType.TECHNICIAN, remoteClient); 
+                    
+                }
+            
+            });
+            
+            lampList.add(menuItem);
+        
+        });
+        
+        return lampList;
+        
+    }
+    
+    private void showAutomaticSignalMenu(String prefix, String identity, String remoteClient, AutomaticSignal autoSig) {
+        
+        if (autoSig.isSignalDisplayingMostRestrictiveAspect()) {
+                    
+            AUTO_MENU_REPLACE.setVisible(false);
+            AUTO_MENU_RESTORE.setVisible(true);
+                    
+        } else {
+                    
+            AUTO_MENU_REPLACE.setVisible(true);
+            AUTO_MENU_RESTORE.setVisible(false);
+                    
+        }
+        
+        // Build Lamp Proving Menu
+        AUTO_SIGNAL_LAMPS.clear();
+        AUTO_SIGNAL_LAMPS.addAll(buildLampMenu(prefix, identity, remoteClient));
+        AUTO_LAMP_PROVING.getItems().clear();
+        AUTO_LAMP_PROVING.getItems().addAll(AUTO_SIGNAL_LAMPS);
         
         AUTO_MENU_REPLACE.setOnAction(e -> {
         
@@ -331,7 +492,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
             CON_SIG.forEach((key, value) -> {
             
                 if (key.equals(signal)) {
-                    value.setFill(getAspectSymbol(key.getCurrentAspect()));
+                    value.setFill(getAspectColour(key.getCurrentAspect()));
                 }
                 
             });
@@ -341,7 +502,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
             AUT_SIG.forEach((key, value) -> {
             
                 if (key.equals(signal)) {
-                    value.setFill(getAspectSymbol(key.getCurrentAspect()));
+                    value.setFill(getAspectColour(key.getCurrentAspect()));
                 }
                 
             });
@@ -349,7 +510,7 @@ public class TechniciansUserInterface extends Application implements Runnable{
         }    
     }
         
-    private static Color getAspectSymbol (Aspects signalAspect) {
+    private static Color getAspectColour (Aspects signalAspect) {
         
         switch (signalAspect) {
             case SUB_OFF:

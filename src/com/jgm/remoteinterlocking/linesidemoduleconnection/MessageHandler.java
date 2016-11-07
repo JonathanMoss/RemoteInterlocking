@@ -16,6 +16,7 @@ import static com.jgm.remoteinterlocking.RemoteInterlocking.updateTrainDetection
 import static com.jgm.remoteinterlocking.RemoteInterlocking.validateModuleIdentity;
 import com.jgm.remoteinterlocking.assets.Aspects;
 import com.jgm.remoteinterlocking.assets.PointsPosition;
+import com.jgm.remoteinterlocking.assets.SignalLamps;
 import com.jgm.remoteinterlocking.assets.TrainDetectionStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,8 +89,15 @@ public abstract class MessageHandler {
                             
                             msgBody = msgStack.get(0).getMsgBody().split("\\.");
                             switch (msgBody[0]) {
-                                case "LAMP_FAILED":
+                                case "LAMP_FAIL":
+                                
+                                    SignalLamps.returnSignal(msgBody[2], msgBody[3]).stateChange(Aspects.valueOf(msgBody[1]), false);
+                                    break;
+                                
                                 case "LAMP_OK":
+                                    
+                                    SignalLamps.returnSignal(msgBody[2], msgBody[3]).stateChange(Aspects.valueOf(msgBody[1]), true);
+                                    break;
                             }
                             
                             break;

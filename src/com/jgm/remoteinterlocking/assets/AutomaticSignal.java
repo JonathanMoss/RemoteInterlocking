@@ -1,5 +1,7 @@
 package com.jgm.remoteinterlocking.assets;
 
+import com.jgm.remoteinterlocking.tecui.TechniciansUserInterface;
+
 /**
  * This Class provides Controlled Signal objects as referenced within the Interlocking / Remote Interlocking.
  * @author Jonathan Moss
@@ -39,7 +41,13 @@ public class AutomaticSignal {
      * @param currentAspect <code>Aspect</code> the current signal aspect.
      */
     public void setCurrentAspect(Aspects currentAspect) {
-        this.currentAspect = currentAspect;
+        
+        if (currentAspect != this.currentAspect) {
+            this.currentAspect = currentAspect; 
+            TechniciansUserInterface.updateSignalAspect(this);
+        }
+        
+
     }
     
     /**
@@ -64,6 +72,10 @@ public class AutomaticSignal {
      */
     public String getLineSideModuleIdentity() {
         return lineSideModuleIdentity;
+    }
+    
+    public Boolean isSignalDisplayingMostRestrictiveAspect() {
+        return this.currentAspect == Aspects.RED;
     }
 
 }
